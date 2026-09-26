@@ -1,34 +1,107 @@
 import {
-  ArrowLeft,
   ArrowRight,
   Check,
   Heart,
   ShoppingBag,
   Trash2,
 } from "lucide-react";
+
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+import EunoiaNav from "../components/EunoiaNav";
+import productImages from "../productImages";
+
+const categoryImages = {
+  foundation:
+    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=80",
+
+  concealer:
+    "https://images.unsplash.com/photo-1583241800698-e8ab01830a07?auto=format&fit=crop&w=900&q=80",
+
+  blush:
+    "https://images.unsplash.com/photo-1590156206657-2f1d6f5f2e6c?auto=format&fit=crop&w=900&q=80",
+
+  lipstick:
+    "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=900&q=80",
+
+  eyeshadow:
+    "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80",
+};
+
+function getProductImage(product) {
+  return (
+    productImages[product.id] ||
+    product.image ||
+    categoryImages[product.category] ||
+    categoryImages.foundation
+  );
+}
+
+function getMatchScore(product) {
+  if (
+    product.match !== undefined &&
+    product.match !== null
+  ) {
+    return Math.round(Number(product.match));
+  }
+
+  if (
+    product.matchScore !== undefined &&
+    product.matchScore !== null
+  ) {
+    if (
+      product.category === "foundation" ||
+      product.category === "concealer"
+    ) {
+      return Math.min(
+        100,
+        Math.max(
+          0,
+          Math.round(Number(product.matchScore))
+        )
+      );
+    }
+
+    return Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(
+          (Number(product.matchScore) / 70) * 100
+        )
+      )
+    );
+  }
+
+  return null;
+}
 
 export default function KitBuilder() {
   const navigate = useNavigate();
 
   const [kit, setKit] = useState(() => {
-    const savedKit = localStorage.getItem("aura-kit");
-
-    if (!savedKit) {
-      return [];
-    }
-
     try {
-      return JSON.parse(savedKit);
+      const savedKit =
+        localStorage.getItem("aura-kit");
+
+      if (!savedKit) {
+        return [];
+      }
+
+      const parsed = JSON.parse(savedKit);
+
+      return Array.isArray(parsed)
+        ? parsed
+        : [];
     } catch {
       return [];
     }
   });
 
   const removeFromKit = (id) => {
-    setKit((current) => {
-      const updatedKit = current.filter(
+    setKit((currentKit) => {
+      const updatedKit = currentKit.filter(
         (product) => product.id !== id
       );
 
@@ -37,13 +110,39 @@ export default function KitBuilder() {
         JSON.stringify(updatedKit)
       );
 
+      window.dispatchEvent(
+        new CustomEvent("eunoia-kit-updated", {
+          detail: {
+            action: "remove",
+          },
+        })
+      );
+
       return updatedKit;
     });
   };
 
+  const deleteAll = () => {
+    setKit([]);
+
+    localStorage.setItem(
+      "aura-kit",
+      JSON.stringify([])
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("eunoia-kit-updated", {
+        detail: {
+          action: "clear",
+        },
+      })
+    );
+  };
+
   const total = useMemo(() => {
     return kit.reduce(
-      (sum, product) => sum + Number(product.price || 0),
+      (sum, product) =>
+        sum + Number(product.price || 0),
       0
     );
   }, [kit]);
@@ -51,69 +150,62 @@ export default function KitBuilder() {
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
 
-      {/* HEADER */}
-      <header className="border-b border-black/10 bg-[#f7f5f2]">
-        <div className="mx-auto flex h-20 max-w-[1500px] items-center justify-between px-6 md:px-10">
+      {/* =====================================================
+          NAVBAR
+      ===================================================== */}
 
-          <button
-            onClick={() => navigate("/results")}
-            className="flex items-center gap-2 text-xs uppercase tracking-[0.2em]"
-          >
-            <ArrowLeft size={16} />
-            Back to matches
-          </button>
+      <EunoiaNav />
 
-          <button
-            onClick={() => navigate("/")}
-            className="text-2xl font-black tracking-[-0.08em]"
-          >
-            AURA
-          </button>
 
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em]">
-            <ShoppingBag size={17} />
+      {/* =====================================================
+          MAIN
+      ===================================================== */}
 
-            <span className="hidden sm:inline">
-              My Kit
-            </span>
-          </div>
-
-        </div>
-      </header>
-
-      {/* MAIN */}
       <main className="mx-auto max-w-[1500px] px-6 py-16 md:px-10 md:py-24">
 
-        {/* TITLE */}
+        {/* ===================================================
+            TITLE
+        =================================================== */}
+
         <section className="grid gap-10 lg:grid-cols-[1.5fr_1fr] lg:items-end">
 
           <div>
-            <p className="mb-5 text-[11px] uppercase tracking-[0.35em] text-gray-500">
-              AURA / MY KIT
+
+            <p className="mb-5 text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-500">
+              EUNOIA / MY KIT
             </p>
 
-            <h1 className="text-6xl font-black uppercase leading-[0.88] tracking-[-0.06em] md:text-8xl">
+            <h1 className="text-6xl font-semibold uppercase leading-[0.88] tracking-[-0.06em] md:text-8xl">
               Your
               <br />
               kit.
             </h1>
+
           </div>
 
           <div className="border-l border-black/20 pl-6 lg:mb-2">
+
             <p className="text-sm leading-7 text-gray-600">
-              Everything you've selected in one place. Build your
-              personalized makeup routine without starting from scratch.
+              Everything you've selected in
+              one place. Build your personalised
+              makeup routine without starting
+              from scratch.
             </p>
+
           </div>
 
         </section>
 
-        {/* EMPTY */}
+
+        {/* ===================================================
+            EMPTY STATE
+        =================================================== */}
+
         {kit.length === 0 && (
           <section className="mt-16 border-y border-black/10 py-24 text-center">
 
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-black/20">
-              <ShoppingBag size={24} />
+              <ShoppingBag size={24} strokeWidth={1.5} />
             </div>
 
             <h2 className="mt-8 text-3xl font-semibold">
@@ -121,13 +213,29 @@ export default function KitBuilder() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-gray-600">
-              Explore your personalized matches and add products
-              you want to keep.
+              Explore your personalised matches
+              and add products you want to keep.
             </p>
 
             <button
+              type="button"
               onClick={() => navigate("/results")}
-              className="mt-8 inline-flex items-center gap-3 bg-black px-7 py-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white"
+              className="
+                mt-8
+                inline-flex
+                items-center
+                gap-3
+                bg-black
+                px-7
+                py-4
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[0.2em]
+                text-white
+                transition
+                hover:bg-[#2d2522]
+              "
             >
               Explore my matches
               <ArrowRight size={15} />
@@ -136,15 +244,24 @@ export default function KitBuilder() {
           </section>
         )}
 
-        {/* KIT */}
+
+        {/* ===================================================
+            KIT CONTENT
+        =================================================== */}
+
         {kit.length > 0 && (
           <>
-            {/* SUMMARY */}
+
+            {/* =================================================
+                SUMMARY
+            ================================================= */}
+
             <section className="mt-16 border-y border-black/10">
 
               <div className="grid md:grid-cols-3">
 
                 <div className="border-b border-black/10 p-6 md:border-b-0 md:border-r">
+
                   <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
                     Products
                   </p>
@@ -152,9 +269,12 @@ export default function KitBuilder() {
                   <p className="mt-3 text-3xl font-semibold">
                     {kit.length}
                   </p>
+
                 </div>
 
+
                 <div className="border-b border-black/10 p-6 md:border-b-0 md:border-r">
+
                   <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
                     Estimated total
                   </p>
@@ -162,32 +282,43 @@ export default function KitBuilder() {
                   <p className="mt-3 text-3xl font-semibold">
                     ₹{total.toLocaleString("en-IN")}
                   </p>
+
                 </div>
 
+
                 <div className="p-6">
+
                   <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
                     Match status
                   </p>
 
                   <div className="mt-3 flex items-center gap-2">
+
                     <Check size={18} />
 
                     <p className="text-xl font-semibold">
-                      Personalized
+                      Personalised
                     </p>
+
                   </div>
+
                 </div>
 
               </div>
 
             </section>
 
-            {/* PRODUCTS */}
+
+            {/* =================================================
+                SELECTED PRODUCTS
+            ================================================= */}
+
             <section className="mt-12">
 
               <div className="mb-6 flex items-center justify-between">
 
                 <div>
+
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
                     Selected products
                   </p>
@@ -195,157 +326,284 @@ export default function KitBuilder() {
                   <h2 className="mt-2 text-2xl font-semibold">
                     Your routine
                   </h2>
+
                 </div>
 
-                <button
-                  onClick={() => navigate("/results")}
-                  className="hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] md:flex"
-                >
-                  Add more
-                  <ArrowRight size={14} />
-                </button>
+
+                <div className="flex items-center gap-5">
+
+                  <button
+                    type="button"
+                    onClick={deleteAll}
+                    className="
+                      flex
+                      items-center
+                      gap-2
+                      text-[10px]
+                      font-semibold
+                      uppercase
+                      tracking-[0.18em]
+                      text-[#8b5f53]
+                      transition
+                      hover:text-black
+                    "
+                  >
+                    <Trash2 size={14} />
+                    Delete all
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/results")}
+                    className="
+                      hidden
+                      items-center
+                      gap-2
+                      text-[10px]
+                      font-semibold
+                      uppercase
+                      tracking-[0.2em]
+                      md:flex
+                    "
+                  >
+                    Add more
+                    <ArrowRight size={14} />
+                  </button>
+
+                </div>
 
               </div>
 
+
               <div className="divide-y divide-black/10 border-y border-black/10">
 
-                {kit.map((product, index) => (
-                  <article
-                    key={product.id}
-                    className="grid gap-6 py-6 md:grid-cols-[80px_180px_1fr_auto] md:items-center"
-                  >
+                {kit.map((product, index) => {
 
-                    {/* NUMBER */}
-                    <div className="hidden md:block">
-                      <span className="text-xs font-semibold">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                    </div>
+                  const image =
+                    getProductImage(product);
 
-                    {/* IMAGE */}
-                    <div className="aspect-square overflow-hidden bg-[#e9e5e1]">
+                  const score =
+                    getMatchScore(product);
 
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="h-full w-full object-cover"
-                      />
+                  return (
+                    <article
+                      key={product.id}
+                      className="
+                        grid
+                        gap-6
+                        py-6
+                        md:grid-cols-[60px_180px_1fr_auto]
+                        md:items-center
+                      "
+                    >
 
-                    </div>
+                      {/* NUMBER */}
 
-                    {/* INFO */}
-                    <div>
+                      <div className="hidden md:block">
 
-                      <p className="text-[10px] font-bold tracking-[0.22em]">
-                        {product.brand}
-                      </p>
-
-                      <h3 className="mt-2 text-xl font-semibold">
-                        {product.name}
-                      </h3>
-
-                      <p className="mt-2 text-sm text-gray-500">
-                        {product.shade}
-                      </p>
-
-                      <div className="mt-4 flex items-center gap-2">
-
-                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.15em]">
-                          <Check size={13} />
-                          {product.match}% match
+                        <span className="text-xs font-semibold">
+                          {String(index + 1).padStart(
+                            2,
+                            "0"
+                          )}
                         </span>
 
                       </div>
 
-                    </div>
 
-                    {/* PRICE + DELETE */}
-                    <div className="flex items-center justify-between gap-6 md:justify-end">
+                      {/* IMAGE */}
 
-                      <p className="text-lg font-semibold">
-                        ₹{Number(product.price).toLocaleString("en-IN")}
-                      </p>
+                      <div className="aspect-square overflow-hidden bg-[#e9e5e1]">
 
-                      <button
-                        onClick={() => removeFromKit(product.id)}
-                        className="flex h-10 w-10 items-center justify-center border border-black/10 transition hover:border-black"
-                        aria-label="Remove product"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                        <img
+                          src={image}
+                          alt={product.name}
+                          className="
+                            h-full
+                            w-full
+                            object-cover
+                            transition
+                            duration-500
+                            hover:scale-[1.03]
+                          "
+                          onError={(event) => {
+                            event.currentTarget.src =
+                              categoryImages[
+                                product.category
+                              ] ||
+                              categoryImages.foundation;
+                          }}
+                        />
 
-                    </div>
+                      </div>
 
-                  </article>
-                ))}
+
+                      {/* INFO */}
+
+                      <div>
+
+                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/50">
+                          {product.brand}
+                        </p>
+
+                        <h3 className="mt-2 text-xl font-semibold">
+                          {product.name}
+                        </h3>
+
+                        {product.shade && (
+                          <p className="mt-2 text-sm text-gray-500">
+                            Shade: {product.shade}
+                          </p>
+                        )}
+
+                        {score !== null && (
+                          <div className="mt-4 flex items-center gap-2">
+
+                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.15em]">
+
+                              <Check size={13} />
+
+                              {score}% match
+
+                            </span>
+
+                          </div>
+                        )}
+
+                      </div>
+
+
+                      {/* PRICE + DELETE */}
+
+                      <div className="flex items-center justify-between gap-6 md:justify-end">
+
+                        <p className="text-lg font-semibold">
+                          ₹
+                          {Number(
+                            product.price || 0
+                          ).toLocaleString("en-IN")}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeFromKit(
+                              product.id
+                            )
+                          }
+                          className="
+                            flex
+                            h-10
+                            w-10
+                            items-center
+                            justify-center
+                            border
+                            border-black/10
+                            transition
+                            hover:border-black
+                          "
+                          aria-label={`Remove ${product.name}`}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+
+                      </div>
+
+                    </article>
+                  );
+                })}
 
               </div>
 
             </section>
 
-            {/* BOTTOM */}
+
+            {/* =================================================
+                BOTTOM INFORMATION
+            ================================================= */}
+
             <section className="mt-20 grid gap-10 lg:grid-cols-2">
 
               <div className="border-t border-black pt-6">
 
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  Your personalized routine
+                  Your personalised routine
                 </p>
 
-                <h2 className="mt-4 max-w-xl text-4xl font-black uppercase leading-none tracking-[-0.04em]">
+                <h2 className="mt-4 max-w-xl text-4xl font-semibold uppercase leading-none tracking-[-0.04em]">
                   Less guessing.
                   <br />
                   More confidence.
                 </h2>
 
                 <p className="mt-6 max-w-xl text-sm leading-7 text-gray-600">
-                  Your kit is built around your skin profile, undertone
-                  and preferences.
+                  Your kit is built around your
+                  skin profile, undertone and
+                  preferences.
                 </p>
 
               </div>
 
+
               <div className="border-t border-black pt-6">
 
                 <div className="flex items-center gap-3">
+
                   <Heart size={17} />
 
                   <p className="text-xs font-semibold uppercase tracking-[0.2em]">
                     Keep exploring
                   </p>
+
                 </div>
 
                 <p className="mt-5 max-w-md text-sm leading-7 text-gray-600">
-                  Explore more products that match your profile.
+                  Explore more products that
+                  match your profile.
                 </p>
 
                 <button
+                  type="button"
                   onClick={() => navigate("/results")}
-                  className="mt-7 flex items-center gap-3 border border-black px-6 py-3 text-[10px] font-semibold uppercase tracking-[0.2em]"
+                  className="
+                    mt-6
+                    flex
+                    items-center
+                    gap-3
+                    text-xs
+                    font-semibold
+                    uppercase
+                    tracking-[0.18em]
+                  "
                 >
-                  View more matches
-                  <ArrowRight size={15} />
+                  Explore matches
+                  <ArrowRight size={14} />
                 </button>
 
               </div>
 
             </section>
+
           </>
         )}
 
       </main>
 
-      {/* FOOTER */}
-      <footer className="mt-20 border-t border-black/10">
 
-        <div className="mx-auto flex max-w-[1500px] flex-col gap-5 px-6 py-10 md:flex-row md:items-center md:justify-between md:px-10">
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
 
-          <p className="text-xl font-black tracking-[-0.08em]">
-            AURA
+      <footer className="border-t border-black/10 bg-[#111111] px-6 py-10 text-white md:px-10">
+
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-5 md:flex-row md:items-center md:justify-between">
+
+          <p className="text-xl font-light tracking-[0.35em]">
+            EUNOIA
           </p>
 
-          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">
-            Makeup, matched to you.
+          <p className="text-xs text-white/45">
+            AI-powered personalised beauty
           </p>
 
         </div>

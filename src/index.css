@@ -1,29 +1,669 @@
 @import "tailwindcss";
 
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+:root {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: #111111;
+  background: #f7f5f2;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+
 * {
   box-sizing: border-box;
 }
+
 
 html {
   scroll-behavior: smooth;
 }
 
+
 body {
   margin: 0;
   min-width: 320px;
-  background: #faf8f6;
-  color: #2d2522;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  background: #f7f5f2;
+  color: #111111;
 }
 
+
 button,
-input,
-select,
-textarea {
-  font: inherit;
+a {
+  -webkit-tap-highlight-color: transparent;
 }
+
 
 button {
   cursor: pointer;
+
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    opacity 0.3s ease,
+    transform 0.3s
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    box-shadow 0.3s ease;
+}
+
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+
+button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.eunoia-logo {
+  transition:
+    opacity 0.3s ease,
+    letter-spacing 0.3s ease;
+}
+
+
+.eunoia-logo:hover {
+  opacity: 0.7;
+  letter-spacing: 0.4em;
+}
+
+
+/* =========================================================
+   NAV LINKS
+========================================================= */
+
+.eunoia-nav-link {
+  transition:
+    opacity 0.3s ease,
+    color 0.3s ease;
+}
+
+
+.eunoia-nav-link::after {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 1px;
+
+  background: currentColor;
+
+  transform: scaleX(0);
+  transform-origin: right;
+
+  transition:
+    transform 0.35s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+
+.eunoia-nav-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+
+/* =========================================================
+   MY KIT NAV BUTTON
+========================================================= */
+
+.eunoia-my-kit {
+  transition:
+    color 0.3s ease,
+    background-color 0.3s ease,
+    transform 0.3s ease;
+}
+
+
+.eunoia-my-kit:hover {
+  background: #111111;
+  color: white;
+  transform: translateY(-2px);
+}
+
+
+.eunoia-my-kit:hover span:last-child {
+  background: white;
+  color: #111111;
+}
+
+
+/* =========================================================
+   FLOATING BASKET
+========================================================= */
+
+.floating-basket {
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    box-shadow 0.3s ease;
+}
+
+
+.floating-basket:hover {
+  transform:
+    translateY(-50%)
+    scale(1.06);
+
+  background: #2d2522;
+
+  box-shadow:
+    0 18px 45px
+    rgba(0, 0, 0, 0.28);
+}
+
+
+/* =========================================================
+   BASKET POP
+========================================================= */
+
+.floating-basket-pop {
+  animation:
+    basketPop
+    0.7s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+
+@keyframes basketPop {
+
+  0% {
+    transform:
+      translateY(-50%)
+      scale(1);
+  }
+
+  18% {
+    transform:
+      translateY(-50%)
+      scale(1.35);
+  }
+
+  35% {
+    transform:
+      translateY(-50%)
+      scale(1.14);
+  }
+
+  50% {
+    transform:
+      translateY(-50%)
+      scale(1.27);
+  }
+
+  68% {
+    transform:
+      translateY(-50%)
+      scale(1.08);
+  }
+
+  85% {
+    transform:
+      translateY(-50%)
+      scale(1.03);
+  }
+
+  100% {
+    transform:
+      translateY(-50%)
+      scale(1);
+  }
+
+}
+
+
+/* =========================================================
+   BASKET RING
+========================================================= */
+
+.floating-basket-ring {
+  opacity: 0;
+  border: 2px solid #c89f91;
+}
+
+
+.floating-basket-pop
+  .floating-basket-ring {
+  animation:
+    basketRing
+    0.7s
+    ease-out;
+}
+
+
+@keyframes basketRing {
+
+  0% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  70% {
+    opacity: 0.25;
+    transform: scale(1.7);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+
+}
+
+
+/* =========================================================
+   BASKET COUNT
+========================================================= */
+
+.basket-count-pop {
+  animation:
+    basketCountPop
+    0.7s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+
+@keyframes basketCountPop {
+
+  0% {
+    transform: scale(1);
+  }
+
+  20% {
+    transform: scale(1.45);
+  }
+
+  40% {
+    transform: scale(1.08);
+  }
+
+  60% {
+    transform: scale(1.3);
+  }
+
+  80% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+
+}
+
+
+/* =========================================================
+   EUNOIA BUTTON
+========================================================= */
+
+.eunoia-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  transition:
+    color 0.35s ease,
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+
+.eunoia-button::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background: #111111;
+
+  transform: translateY(100%);
+
+  transition:
+    transform 0.4s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+
+  z-index: -1;
+}
+
+
+.eunoia-button:hover::before {
+  transform: translateY(0);
+}
+
+
+.eunoia-button:hover {
+  color: white !important;
+  border-color: #111111 !important;
+  transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   PRODUCT CARDS
+========================================================= */
+
+.eunoia-product-card {
+  transition:
+    transform 0.4s
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+    box-shadow 0.4s ease;
+}
+
+
+.eunoia-product-card:hover {
+  transform: translateY(-5px);
+
+  box-shadow:
+    0 20px 50px
+    rgba(0, 0, 0, 0.08);
+}
+
+
+.eunoia-product-image {
+  overflow: hidden;
+}
+
+
+.eunoia-product-image img {
+  transition:
+    transform 0.7s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    );
+}
+
+
+.eunoia-product-card:hover
+  .eunoia-product-image
+  img {
+  transform: scale(1.04);
+}
+
+
+/* =========================================================
+   MATCH SCORE
+========================================================= */
+
+@keyframes scorePop {
+
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+}
+
+
+.score-pop {
+  animation:
+    scorePop
+    0.5s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    )
+    both;
+}
+
+
+/* =========================================================
+   ROUTE TRANSITION
+========================================================= */
+
+@keyframes routeEnter {
+
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+
+.route-transition {
+  animation:
+    routeEnter
+    0.55s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    )
+    both;
+}
+
+
+/* =========================================================
+   GENERAL ANIMATIONS
+========================================================= */
+
+@keyframes fadeUp {
+
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+
+.fade-up {
+  animation:
+    fadeUp
+    0.7s
+    cubic-bezier(
+      0.22,
+      1,
+      0.36,
+      1
+    )
+    both;
+}
+
+
+@keyframes fadeIn {
+
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+
+}
+
+
+.fade-in {
+  animation:
+    fadeIn
+    0.7s
+    ease
+    both;
+}
+
+
+/* =========================================================
+   SHADE MATCH
+========================================================= */
+
+.shade-step {
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s ease;
+}
+
+
+.shade-step:hover {
+  background: rgba(0, 0, 0, 0.025);
+  transform: translateY(-2px);
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+
+  .floating-basket {
+    right: 16px;
+    bottom: 22px;
+    top: auto;
+
+    transform: none;
+  }
+
+  .floating-basket:hover {
+    transform: scale(1.06);
+  }
+
+  .floating-basket-pop {
+    animation:
+      basketPopMobile
+      0.7s
+      cubic-bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      );
+  }
+
+  @keyframes basketPopMobile {
+
+    0% {
+      transform: scale(1);
+    }
+
+    18% {
+      transform: scale(1.35);
+    }
+
+    35% {
+      transform: scale(1.14);
+    }
+
+    50% {
+      transform: scale(1.27);
+    }
+
+    68% {
+      transform: scale(1.08);
+    }
+
+    85% {
+      transform: scale(1.03);
+    }
+
+    100% {
+      transform: scale(1);
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
 }

@@ -67,17 +67,7 @@ const products = [
     price: 649,
   },
 
-  {
-    id: "foundation-maybelline-006",
-    brand: "Maybelline",
-    category: "foundation",
-    name: "Fit Me",
-    shade: "Natural Beige",
-    depth: "medium",
-    undertone: "warm",
-    undertoneDetail: "subtle yellow / wheatish",
-    price: 649,
-  },
+  
 
   {
     id: "foundation-maybelline-007",
@@ -279,160 +269,153 @@ const products = [
     coverage: "full",
     source: "shade listing provided"
   },
-    // =========================
-  // L'ORÉAL TRUE MATCH
-  // =========================
+    // ---------------------------------------------------------
+// L'Oréal Paris Infallible 24H Tinted Serum Foundation
+// ---------------------------------------------------------
 
-  {
-    id: "loreal-w2",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "W2 Light Ivory",
-    depth: "light",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-001",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "0.5-2 Very Light",
+  depth: "fair",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-w3",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "W3 Nude Beige / Golden Beige",
-    depth: "light",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-002",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "1-2 Rosy Light",
+  depth: "fair",
+  undertone: "cool",
+  undertoneDetail: "rosy",
+  price: 849,
+},
 
-  {
-    id: "loreal-w4",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "W4 Natural Beige",
-    depth: "light-medium",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-003",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "1-1.5 Rosy",
+  depth: "fair",
+  undertone: "cool",
+  undertoneDetail: "rosy",
+  price: 849,
+},
 
-  {
-    id: "loreal-w5",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "W5 Sand Beige / Golden Sand",
-    depth: "medium",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-004",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "2-2.5 Neutral Light",
+  depth: "light",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-w6",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "W6 Sun Beige",
-    depth: "medium",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-005",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "2-3 Light",
+  depth: "light",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-n3",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "N3 Natural Buff",
-    depth: "light",
-    undertone: "neutral",
-    undertoneDetail: "neutral",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-006",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "3-3.5 Light Warm Nude",
+  depth: "light-medium",
+  undertone: "warm",
+  undertoneDetail: "warm / golden",
+  price: 849,
+},
 
-  {
-    id: "loreal-n5",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "N5 True Beige / Sand",
-    depth: "medium",
-    undertone: "neutral",
-    undertoneDetail: "neutral",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-007",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "3-4 Light-Medium",
+  depth: "light-medium",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-n6",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "N6 Honey",
-    depth: "medium",
-    undertone: "neutral",
-    undertoneDetail: "neutral",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-008",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "4-5 Medium",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-c3",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "C3 Soft Rose / Rose Beige",
-    depth: "light",
-    undertone: "cool",
-    undertoneDetail: "cool/pink",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-009",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "4.5-5.5 Medium Nude",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "neutral",
+  price: 849,
+},
 
-  {
-    id: "loreal-c6",
-    brand: "L'Oréal",
-    name: "True Match Foundation",
-    category: "foundation",
-    shade: "C6 Soft Sable / Rose Sand",
-    depth: "medium",
-    undertone: "cool",
-    undertoneDetail: "cool/pink",
-    price: 879,
-    finish: "natural",
-    coverage: "medium, buildable",
-    source: "official L'Oréal True Match product information"
-  },
+{
+  id: "foundation-loreal-infallible-010",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "5-6 Medium-Tan",
+  depth: "medium-tan",
+  undertone: "warm",
+  undertoneDetail: "warm / golden",
+  price: 899,
+},
 
+{
+  id: "foundation-loreal-infallible-011",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "6-7 Tan",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "warm / golden",
+  price: 899,
+},
+
+{
+  id: "foundation-loreal-infallible-012",
+  brand: "L'Oréal Paris",
+  name: "Infallible 24H Tinted Serum Foundation",
+  category: "foundation",
+  shade: "7-8 Tan Deep",
+  depth: "deep-medium",
+  undertone: "warm",
+  undertoneDetail: "warm / golden",
+  price: 899,
+},
   // =========================
   // LAKMÉ
   // =========================
@@ -553,101 +536,129 @@ const products = [
   // MARS Foundation
   // -------------------------
 
-  {
-    id: "foundation-mars-001",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 1",
-    depth: "light",
-    undertone: "cool",
-    undertoneDetail: "pink",
-    price: 249,
-  },
+ // =========================================================
+// MARS SPF50 PA++++ HIGH COVERAGE LIQUID FOUNDATION
+// =========================================================
 
-  {
-    id: "foundation-mars-002",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 2",
-    depth: "light",
-    undertone: "cool",
-    undertoneDetail: "pink with very slight warm",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-001",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "01 Ivory Glow",
+  depth: "fair",
+  undertone: "neutral",
+  undertoneDetail: "fair / neutral",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-003",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 3",
-    depth: "light-medium",
-    undertone: "warm",
-    undertoneDetail: "pink and yellow hints",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-002",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "02 Soft Beige",
+  depth: "light",
+  undertone: "warm",
+  undertoneDetail: "light / warm",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-004",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 4",
-    depth: "medium",
-    undertone: "olive",
-    undertoneDetail: "neutral / olive / grey",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-003",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "03 Natural Beige",
+  depth: "light-medium",
+  undertone: "neutral",
+  undertoneDetail: "light-medium / neutral",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-005",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 5",
-    depth: "medium-tan",
-    undertone: "olive",
-    undertoneDetail: "olive-warm",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-004",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "04 Neutral Charm",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "medium / neutral",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-006",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 6",
-    depth: "medium",
-    undertone: "neutral",
-    undertoneDetail: "neutral beige with pink",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-005",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "05 Sandstone",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "medium / warm",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-007",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 7",
-    depth: "dusky-medium",
-    undertone: "warm",
-    undertoneDetail: "warm / similar to MAC NC42",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-006",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "06 Honey Tan",
+  depth: "medium-tan",
+  undertone: "warm",
+  undertoneDetail: "medium-tan / warm / golden",
+  price: 399,
+},
 
-  {
-    id: "foundation-mars-008",
-    brand: "MARS",
-    category: "foundation",
-    name: "Foundation",
-    shade: "Shade 8",
-    depth: "dusky-medium",
-    undertone: "neutral",
-    undertoneDetail: "beige with orange / peach",
-    price: 249,
-  },
+{
+  id: "foundation-mars-high-007",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "07 Almond",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "medium-dark / warm",
+  price: 399,
+},
+
+{
+  id: "foundation-mars-high-008",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "08 Deep Tan",
+  depth: "deep",
+  undertone: "warm",
+  undertoneDetail: "deep / warm / golden",
+  price: 399,
+},
+
+{
+  id: "foundation-mars-high-009",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "5.5",
+  depth: "medium-tan",
+  undertone: "neutral",
+  undertoneDetail: "medium-tan / neutral",
+  price: 399,
+},
+
+{
+  id: "foundation-mars-high-010",
+  brand: "MARS",
+  category: "foundation",
+  name: "SPF50 PA++++ High Coverage Liquid Foundation",
+  shade: "6.5",
+  depth: "deep-medium",
+  undertone: "warm",
+  undertoneDetail: "deep-medium / warm",
+  price: 399,
+},
 
   // =========================================================
   // CONCEALER
@@ -657,66 +668,129 @@ const products = [
   // Maybelline Age Rewind
   // -------------------------
 
-  {
-    id: "concealer-maybelline-001",
-    brand: "Maybelline",
-    category: "concealer",
-    name: "Instant Age Rewind",
-    shade: "150 Neutralizer",
-    depth: "fair-medium",
-    undertone: "warm",
-    undertoneDetail: "peachy warm / corrector",
-    price: 649,
-  },
+ // ---------------------------------------------------------
+// MAYBELLINE INSTANT AGE REWIND ERASER CONCEALER
+// ---------------------------------------------------------
 
-  {
-    id: "concealer-maybelline-002",
-    brand: "Maybelline",
-    category: "concealer",
-    name: "Instant Age Rewind",
-    shade: "130 Medium",
-    depth: "medium",
-    undertone: "cool",
-    undertoneDetail: "neutral-cool / pink-grey",
-    price: 649,
-  },
+{
+  id: "concealer-maybelline-001",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "100 Ivory",
+  depth: "fair",
+  undertone: "neutral",
+  undertoneDetail: "fair / neutral",
+  price: 799,
+},
 
-  {
-    id: "concealer-maybelline-003",
-    brand: "Maybelline",
-    category: "concealer",
-    name: "Instant Age Rewind",
-    shade: "122 Sand",
-    depth: "light-medium",
-    undertone: "warm",
-    undertoneDetail: "warm / not too yellow",
-    price: 649,
-  },
+{
+  id: "concealer-maybelline-002",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "110 Fair",
+  depth: "fair",
+  undertone: "cool",
+  undertoneDetail: "fair / cool",
+  price: 799,
+},
 
-  {
-    id: "concealer-maybelline-004",
-    brand: "Maybelline",
-    category: "concealer",
-    name: "Instant Age Rewind",
-    shade: "142 Butterscotch",
-    depth: "deep",
-    undertone: "warm",
-    undertoneDetail: "neutral to neutral-warm",
-    price: 649,
-  },
+{
+  id: "concealer-maybelline-003",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "120 Light",
+  depth: "light",
+  undertone: "warm",
+  undertoneDetail: "light / warm",
+  price: 799,
+},
 
-  {
-    id: "concealer-maybelline-005",
-    brand: "Maybelline",
-    category: "concealer",
-    name: "Instant Age Rewind",
-    shade: "144 Caramel",
-    depth: "deep",
-    undertone: "warm",
-    undertoneDetail: "deep / tanned / warm",
-    price: 649,
-  },
+{
+  id: "concealer-maybelline-004",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "122 Sand",
+  depth: "light",
+  undertone: "warm",
+  undertoneDetail: "light / warm / golden",
+  price: 799,
+},
 
+{
+  id: "concealer-maybelline-005",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "130 Medium",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "medium / warm",
+  price: 799,
+},
+
+{
+  id: "concealer-maybelline-006",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "140 Honey",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "medium-dark / warm",
+  price: 799,
+},
+
+{
+  id: "concealer-maybelline-007",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "142 Butterscotch",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "medium-dark / warm / golden",
+  price: 799,
+},
+
+{
+  id: "concealer-maybelline-008",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "144 Caramel",
+  depth: "deep",
+  undertone: "warm",
+  undertoneDetail: "deep / tanned / warm",
+  price: 799,
+},
+
+{
+  id: "concealer-maybelline-009",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "150 Neutralizer",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "neutral / correcting",
+  price: 799,
+},
+
+{
+  id: "concealer-maybelline-010",
+  brand: "Maybelline",
+  category: "concealer",
+  name: "Instant Age Rewind",
+  shade: "4.5",
+  depth: "light-medium",
+  undertone: "neutral",
+  undertoneDetail: "light-medium / neutral",
+  price: 799,
+},
   // -------------------------
   // Kay Beauty HD Liquid Concealer
   // -------------------------
@@ -877,70 +951,143 @@ const products = [
     price: 799,
   },
 
-  // -------------------------
-  // MARS Concealer
-  // -------------------------
+  // =========================================================
+// MARS SPF50 PA++++ CANCEL CONCEALER
+// =========================================================
 
-  {
-    id: "concealer-mars-001",
-    brand: "MARS",
-    category: "concealer",
-    name: "Concealer",
-    shade: "03 Dreamy Beige",
-    depth: "fair",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 249,
-  },
+{
+  id: "concealer-mars-001",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "01 Ivory Veil",
+  depth: "fair",
+  undertone: "neutral",
+  undertoneDetail: "fair / neutral",
+  price: 249,
+},
 
-  {
-    id: "concealer-mars-002",
-    brand: "MARS",
-    category: "concealer",
-    name: "Concealer",
-    shade: "04 Natural Charm",
-    depth: "medium",
-    undertone: "neutral",
-    undertoneDetail: "neutral / wheatish",
-    price: 249,
-  },
+{
+  id: "concealer-mars-002",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "02 Yellow",
+  type: "corrector",
+  depth: "fair-medium",
+  undertone: "warm",
+  undertoneDetail: "yellow / warm corrector",
+  price: 249,
+},
 
-  {
-    id: "concealer-mars-003",
-    brand: "MARS",
-    category: "concealer",
-    name: "Concealer",
-    shade: "05 Sandstone",
-    depth: "medium",
-    undertone: "cool",
-    undertoneDetail: "neutral-cool / pinkish",
-    price: 249,
-  },
+{
+  id: "concealer-mars-003",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "03 Dreamy Beige",
+  depth: "light",
+  undertone: "warm",
+  undertoneDetail: "light / warm",
+  price: 249,
+},
 
-  {
-    id: "concealer-mars-004",
-    brand: "MARS",
-    category: "concealer",
-    name: "Concealer",
-    shade: "06 Honey Glow",
-    depth: "deep-medium",
-    undertone: "neutral",
-    undertoneDetail: "neutral",
-    price: 249,
-  },
+{
+  id: "concealer-mars-004",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "04 Neutral Charm",
+  depth: "light-medium",
+  undertone: "neutral",
+  undertoneDetail: "light-medium / neutral",
+  price: 249,
+},
 
-  {
-    id: "concealer-mars-005",
-    brand: "MARS",
-    category: "concealer",
-    name: "Concealer",
-    shade: "07 Caramel Charm",
-    depth: "deep-medium",
-    undertone: "warm",
-    undertoneDetail: "warm",
-    price: 249,
-  },
+{
+  id: "concealer-mars-005",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "05 Sandstone",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "medium / warm",
+  price: 249,
+},
 
+{
+  id: "concealer-mars-006",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "06 Honey Glow",
+  depth: "medium-tan",
+  undertone: "warm",
+  undertoneDetail: "medium-tan / warm / golden",
+  price: 249,
+},
+
+{
+  id: "concealer-mars-007",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "07 Caramel Charm",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "medium-dark / warm",
+  price: 249,
+},
+
+{
+  id: "concealer-mars-008",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "08 Espresso Elegance",
+  depth: "deep",
+  undertone: "warm",
+  undertoneDetail: "deep / warm",
+  price: 249,
+},
+
+{
+  id: "concealer-mars-009",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "1.5 Vanilla Beige",
+  depth: "light",
+  undertone: "neutral",
+  undertoneDetail: "light / neutral",
+  price: 249,
+},
+
+{
+  id: "concealer-mars-010",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "6.5 Toffee Radiant",
+  depth: "medium-dark",
+  undertone: "warm",
+  undertoneDetail: "medium-dark / warm",
+  price: 249,
+},
+
+{
+  id: "concealer-mars-011",
+  brand: "MARS",
+  category: "concealer",
+  name: "SPF50 PA++++ Cancel Concealer",
+  shade: "09 Orange",
+  type: "corrector",
+  depth: "deep",
+  undertone: "warm",
+  undertoneDetail: "orange / warm corrector",
+  price: 249,
+},
   // -------------------------
   // Swiss Beauty Concealer
   // -------------------------
@@ -1022,7 +1169,156 @@ const products = [
   // =========================================================
   // BLUSH
   // =========================================================
+// =========================================================
+// MARS BLUSH HOUR LIQUID BLUSH
+// =========================================================
 
+{
+  id: "blush-mars-hour-001",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "01 Dawn",
+  depth: "light",
+  undertone: "warm",
+  undertoneDetail: "peachy coral / warm",
+  price: 299,
+},
+
+{
+  id: "blush-mars-hour-002",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "02 Twilight",
+  depth: "light-medium",
+  undertone: "neutral",
+  undertoneDetail: "soft rosy peach / neutral",
+  price: 299,
+},
+
+{
+  id: "blush-mars-hour-003",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "03 Sunkissed",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "golden peach / warm",
+  price: 299,
+},
+
+{
+  id: "blush-mars-hour-004",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "04 Horizon",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "orange pink / warm",
+  price: 299,
+},
+
+{
+  id: "blush-mars-hour-005",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "05 Dusk",
+  depth: "medium-dark",
+  undertone: "cool",
+  undertoneDetail: "deep rosy mauve / cool",
+  price: 299,
+},
+
+{
+  id: "blush-mars-hour-006",
+  brand: "MARS",
+  category: "blush",
+  name: "Blush Hour Liquid Blush",
+  shade: "06 Night Glow",
+  depth: "deep",
+  undertone: "warm",
+  undertoneDetail: "shimmering bronze / warm",
+  price: 299,
+},
+// =========================================================
+// INSIGHT COSMETICS BLUSHER
+// =========================================================
+
+{
+  id: "blush-insight-001",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "01 Soft Salmon",
+  depth: "fair",
+  undertone: "warm",
+  undertoneDetail: "soft salmon / peach / warm",
+  price: 105,
+},
+
+{
+  id: "blush-insight-002",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "02 Raspberry Gelato",
+  depth: "light-medium",
+  undertone: "cool",
+  undertoneDetail: "raspberry pink / cool",
+  price: 105,
+},
+
+{
+  id: "blush-insight-003",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "03 Dusty Rose",
+  depth: "medium",
+  undertone: "cool",
+  undertoneDetail: "dusty rose / muted pink / cool",
+  price: 105,
+},
+
+{
+  id: "blush-insight-004",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "04 Watermelon Popsicle",
+  depth: "medium",
+  undertone: "cool",
+  undertoneDetail: "watermelon pink / rosy / cool",
+  price: 105,
+},
+
+{
+  id: "blush-insight-005",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "05 Strawberry Drip",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "coral pink / peachy / warm",
+  price: 105,
+},
+
+{
+  id: "blush-insight-006",
+  brand: "Insight Cosmetics",
+  category: "blush",
+  name: "Blusher With Vitamin E",
+  shade: "06 Caramel Eclair",
+  depth: "medium-tan",
+  undertone: "warm",
+  undertoneDetail: "caramel / warm brown / warm",
+  price: 105,
+},
   {
     id: "blush-colorbar-001",
     brand: "Colorbar",
@@ -1318,6 +1614,45 @@ const products = [
 // =========================================================
 
 products.push(
+  // =========================================================
+// MARS DANCE OF JOY 12-IN-1 EYESHADOW PALETTE
+// =========================================================
+
+{
+  id: "eyeshadow-mars-dance-001",
+  brand: "MARS",
+  category: "eyeshadow",
+  name: "Dance Of Joy 12-In-1 Eyeshadow Palette",
+  shade: "Shade 01",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "warm browns / peach / gold / neutral-warm",
+  price: 329,
+},
+
+{
+  id: "eyeshadow-mars-dance-002",
+  brand: "MARS",
+  category: "eyeshadow",
+  name: "Dance Of Joy 12-In-1 Eyeshadow Palette",
+  shade: "Shade 02",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "warm nude / brown / bronze / gold",
+  price: 329,
+},
+
+{
+  id: "eyeshadow-mars-dance-003",
+  brand: "MARS",
+  category: "eyeshadow",
+  name: "Dance Of Joy 12-In-1 Eyeshadow Palette",
+  shade: "Shade 03",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "multicolor / pink / blue / green / neutral",
+  price: 329,
+},
 
   {
     id: "eyeshadow-huda-001",
@@ -1427,6 +1762,33 @@ products.push(
       "warm deep chocolate, bronze, mahogany, golden copper",
       price: 1200,
   },
+  // =========================================================
+// SWISS BEAUTY WINKY 36 COLORS EYESHADOW PALETTE
+// =========================================================
+
+{
+  id: "eyeshadow-swiss-winky-001",
+  brand: "Swiss Beauty",
+  category: "eyeshadow",
+  name: "Winky 36 Colors Eyeshadow Palette",
+  shade: "Shade 01",
+  depth: "medium",
+  undertone: "warm",
+  undertoneDetail: "warm browns / peach / coral / gold / multicolor",
+  price: 1199,
+},
+
+{
+  id: "eyeshadow-swiss-winky-002",
+  brand: "Swiss Beauty",
+  category: "eyeshadow",
+  name: "Winky 36 Colors Eyeshadow Palette",
+  shade: "Shade 02",
+  depth: "medium",
+  undertone: "neutral",
+  undertoneDetail: "mixed neutrals / pink / blue / green / multicolor",
+  price: 1199,
+},
 
   {
     id: "eyeshadow-elf-001",
