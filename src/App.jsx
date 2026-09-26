@@ -1,11 +1,83 @@
 import { useEffect, useState } from "react";
 
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+
 import { supabase } from "./lib/supabase";
 
 import Login from "./components/Auth/Login";
 import Signup from "./components/Auth/Signup";
 
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Scan from "./pages/Scan";
+import Preferences from "./pages/Preferences";
+import Results from "./pages/Results";
+import KitBuilder from "./pages/KitBuilder";
+import ShadeMatch from "./pages/ShadeMatch";
+
 import "./App.css";
+
+// --------------------------------------------
+// Scroll to top whenever the page changes
+// --------------------------------------------
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [pathname]);
+
+  return null;
+}
+
+// --------------------------------------------
+// Person 1's GlowMatch routes
+// --------------------------------------------
+
+function GlowMatchRoutes() {
+  return (
+    <>
+      <ScrollToTop />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+
+        <Route path="/about" element={<About />} />
+
+        <Route path="/scan" element={<Scan />} />
+
+        <Route path="/preferences" element={<Preferences />} />
+
+        <Route path="/results" element={<Results />} />
+
+        <Route path="/kit" element={<KitBuilder />} />
+
+        <Route path="/shade-match" element={<ShadeMatch />} />
+
+        {/* If the user enters an unknown URL, go home */}
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+      </Routes>
+    </>
+  );
+}
+
+// --------------------------------------------
+// Main App
+// --------------------------------------------
 
 function App() {
   const [supabaseStatus, setSupabaseStatus] = useState(
@@ -93,7 +165,7 @@ function App() {
   }
 
   // --------------------------------------------
-  // Login / Signup screen
+  // Login / Signup
   // --------------------------------------------
 
   if (!user) {
@@ -119,53 +191,13 @@ function App() {
   }
 
   // --------------------------------------------
-  // Logged-in app
+  // Logged-in GlowMatch application
   // --------------------------------------------
 
   return (
-    <>
-      <div
-        style={{
-          padding: "16px",
-          textAlign: "right",
-          borderBottom: "1px solid #ddd",
-        }}
-      >
-        <span>
-          Logged in as: <strong>{user.email}</strong>
-        </span>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{ marginLeft: "12px" }}
-        >
-          Log Out
-        </button>
-      </div>
-
-      {/* 
-        MAIN GLOWMATCH APP GOES HERE
-
-        Person 1's UI will be connected here later.
-        Person 2's skin analysis will be connected here later.
-        Person 3's recommendations will be connected here later.
-      */}
-
-      <main>
-        <h1>GlowMatch</h1>
-
-        <p>
-          <strong>{supabaseStatus}</strong>
-        </p>
-
-        <p>
-          Logged in successfully as:
-          <br />
-          <strong>{user.email}</strong>
-        </p>
-      </main>
-    </>
+    <BrowserRouter>
+      <GlowMatchRoutes />
+    </BrowserRouter>
   );
 }
 
