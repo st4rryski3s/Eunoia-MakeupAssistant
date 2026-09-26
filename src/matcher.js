@@ -13,11 +13,6 @@ const depthOrder = [
   "dusky",
 ];
 
-
-// =========================================================
-// FOUNDATION / CONCEALER DEPTH
-// =========================================================
-
 function getDepthScore(userDepth, productDepth) {
   const userIndex = depthOrder.indexOf(userDepth);
   const productIndex = depthOrder.indexOf(productDepth);
@@ -46,11 +41,6 @@ function getDepthScore(userDepth, productDepth) {
 
   return 0;
 }
-
-
-// =========================================================
-// UNDERTONE
-// =========================================================
 
 function getUndertoneScore(userUndertone, productUndertone) {
   if (userUndertone === productUndertone) {
@@ -90,11 +80,6 @@ function getUndertoneScore(userUndertone, productUndertone) {
   return 0;
 }
 
-
-// =========================================================
-// BLUSH
-// =========================================================
-
 function getBlushScore(user, product) {
   if (user.undertone === product.undertone) {
     return 70;
@@ -109,11 +94,6 @@ function getBlushScore(user, product) {
 
   return 20;
 }
-
-
-// =========================================================
-// LIPSTICK
-// =========================================================
 
 function getLipstickScore(user, product) {
   if (user.undertone === product.undertone) {
@@ -139,11 +119,6 @@ function getLipstickScore(user, product) {
   return 20;
 }
 
-
-// =========================================================
-// EYESHADOW
-// =========================================================
-
 function getEyeshadowScore(user, product) {
   if (user.undertone === product.undertone) {
     return 70;
@@ -168,16 +143,8 @@ function getEyeshadowScore(user, product) {
   return 20;
 }
 
-
-// =========================================================
-// MATCH REASON
-// =========================================================
-
 function getMatchReason(user, product) {
-
-  // BLUSH
   if (product.category === "blush") {
-
     if (user.undertone === product.undertone) {
       return "Blush undertone matches your skin undertone";
     }
@@ -192,10 +159,7 @@ function getMatchReason(user, product) {
     return "Blush has a different undertone";
   }
 
-
-  // LIPSTICK
   if (product.category === "lipstick") {
-
     if (user.undertone === product.undertone) {
       return "Lipstick undertone matches your skin undertone";
     }
@@ -219,10 +183,7 @@ function getMatchReason(user, product) {
     return "Lipstick has a different undertone";
   }
 
-
-  // EYESHADOW
   if (product.category === "eyeshadow") {
-
     if (user.undertone === product.undertone) {
       return "Eyeshadow palette undertone matches your skin undertone";
     }
@@ -246,8 +207,6 @@ function getMatchReason(user, product) {
     return "Eyeshadow palette has a different undertone";
   }
 
-
-  // FOUNDATION / CONCEALER
   const depthScore = getDepthScore(
     user.depth,
     product.depth
@@ -285,13 +244,7 @@ function getMatchReason(user, product) {
   return reasons.join(" + ");
 }
 
-
-// =========================================================
-// CALCULATE MATCH
-// =========================================================
-
-function calculateMatch(user, product) {
-
+export function calculateMatch(user, product) {
   if (product.category === "blush") {
     return getBlushScore(user, product);
   }
@@ -304,7 +257,6 @@ function calculateMatch(user, product) {
     return getEyeshadowScore(user, product);
   }
 
-  // Foundation / Concealer
   const depthScore = getDepthScore(
     user.depth,
     product.depth
@@ -318,15 +270,13 @@ function calculateMatch(user, product) {
   return depthScore + undertoneScore;
 }
 
-
-// =========================================================
-// RECOMMEND PRODUCTS
-// =========================================================
-
-function recommendProducts(user, products) {
+export function recommendProducts(user, products) {
   return products
-    .filter(product => product.category === user.category)
-    .filter(product => {
+    .filter(
+      (product) =>
+        product.category === user.category
+    )
+    .filter((product) => {
       if (
         user.category === "concealer" &&
         product.type === "corrector"
@@ -335,22 +285,24 @@ function recommendProducts(user, products) {
       }
 
       return true;
-      
     })
-    .filter(product => {
-  if (user.budget && (!product.price || product.price > user.budget)) {
-    return false;
-  }
-  return true;
-})
-    .map(product => ({
+    .filter((product) => {
+      if (
+        user.budget &&
+        (!product.price ||
+          product.price > user.budget)
+      ) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((product) => ({
       ...product,
       matchScore: calculateMatch(user, product),
       matchReason: getMatchReason(user, product),
     }))
-    .sort((a, b) => b.matchScore - a.matchScore);
+    .sort(
+      (a, b) => b.matchScore - a.matchScore
+    );
 }
-module.exports = {
-  calculateMatch,
-  recommendProducts,
-};

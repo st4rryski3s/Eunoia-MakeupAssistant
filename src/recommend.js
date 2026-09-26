@@ -1,10 +1,6 @@
-const products = require("../data/products");
-const { recommendProducts } = require("./matcher");
+import products from "./data/products";
+import { recommendProducts } from "./matcher";
 
-function getRecommendations(user) {
+export function getRecommendations(user) {
   return recommendProducts(user, products);
 }
-
-module.exports = {
-  getRecommendations,
-};
