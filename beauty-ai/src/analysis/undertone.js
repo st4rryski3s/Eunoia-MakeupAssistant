@@ -83,108 +83,263 @@ export function analyzeSkin(rgb) {
 
   /*
    * ----------------------------------------
-   * 3. OLIVE DETECTION
+   * 3. NORMALIZED COLOUR FEATURES
    * ----------------------------------------
    *
-   * Olive skin tends toward a yellow/green
-   * appearance rather than strongly red,
-   * pink, or golden.
+   * Raw RGB values are heavily affected by
+   * brightness and exposure.
+   *
+   * Normalizing the channels gives us ratios
+   * that are less dependent on overall image
+   * brightness.
    */
 
-  const oliveScore =
-    greenStrength +
-    yellowStrength * 0.35;
+  const total = r + g + b || 1;
+
+  const redRatio = r / total;
+  const greenRatio = g / total;
+  const blueRatio = b / total;
+
+  /*
+   * Difference between the channels after
+   * normalization.
+   */
+
+  const redGreenRatio =
+    redRatio - greenRatio;
+
+  const greenBlueRatio =
+    greenRatio - blueRatio;
+
+  const redBlueRatio =
+    redRatio - blueRatio;
 
   /*
    * ----------------------------------------
-   * 4. HUE FAMILY
+   * 4. OLIVE SCORE
    * ----------------------------------------
+   *
+   * Olive usually has:
+   *
+   * - noticeable green relative to blue
+   * - a yellow component
+   * - less extreme red dominance than
+   *   strongly warm/peach skin
+   *
+   * IMPORTANT:
+   * Olive does NOT require G >= R.
    */
 
-  let hueFamily;
+  let oliveScore = 0;
 
-  if (
-    h >= 5 &&
-    h < 15
-  ) {
-    hueFamily = "Peach";
+  /*
+   * Green relative to blue.
+   */
 
-  } else if (
-    h >= 15 &&
-    h < 35
-  ) {
-    hueFamily = "Golden";
+  if (greenBlueRatio > 0.055) {
+    oliveScore += 2;
+  }
 
-  } else if (
-    h >= 35 &&
-    h < 55
-  ) {
-    hueFamily = "Yellow";
+  if (greenBlueRatio > 0.075) {
+    oliveScore += 1;
+  }
 
-  } else if (
-    h >= 55 &&
-    h < 90
-  ) {
-    hueFamily = "Olive";
+  /*
+   * Avoid very strong red dominance.
+   */
 
-  } else if (
-    h >= 0 &&
-    h < 5
-  ) {
-    hueFamily = "Red";
+  if (redGreenRatio < 0.18) {
+    oliveScore += 2;
+  }
 
-  } else if (
-    h >= 330 &&
-    h <= 360
-  ) {
-    hueFamily = "Rosy";
+  if (redGreenRatio < 0.12) {
+    oliveScore += 1;
+  }
 
-  } else {
-    hueFamily = "Neutral";
+  /*
+   * Olive generally sits in the yellow/
+   * yellow-green portion of the skin range.
+   */
+
+  if (h >= 25 && h <= 75) {
+    oliveScore += 2;
+  }
+
+  /*
+   * Very low saturation is more likely to be
+   * neutral than olive.
+   */
+
+  if (s >= 12 && s <= 55) {
+    oliveScore += 1;
+  }
+
+  /*
+   * Extremely red skin should not easily
+   * become olive.
+   */
+
+  if (redBlueRatio > 0.25) {
+    oliveScore -= 2;
   }
 
   /*
    * ----------------------------------------
-   * 5. UNDERTONE
+   * 5. WARM SCORE
+   * ----------------------------------------
+   */
+
+  let warmScore = 0;
+
+  /*
+   * Red dominance.
+   */
+
+  if (redGreenRatio > 0.12) {
+    warmScore += 2;
+  }
+
+  if (redGreenRatio > 0.18) {
+    warmScore += 1;
+  }
+
+  /*
+   * Yellow component.
+   */
+
+  if (yellowStrength > 20) {
+    warmScore += 1;
+  }
+
+  if (yellowStrength > 30) {
+    warmScore += 1;
+  }
+
+  /*
+   * Typical warm hue range.
+   */
+
+  if (h >= 10 && h < 40) {
+    warmScore += 2;
+  }
+
+  /*
+   * Very red hues are more likely warm/rosy
+   * than olive.
+   */
+
+  if (h < 10 || h >= 330) {
+    warmScore += 1;
+  }
+
+  /*
+   * ----------------------------------------
+   * 6. COOL SCORE
+   * ----------------------------------------
+   */
+
+  let coolScore = 0;
+
+  /*
+   * Blue relative to red.
+   */
+
+  if (blueRatio > redRatio) {
+    coolScore += 3;
+  }
+
+  if (blueStrength > 12) {
+    coolScore += 2;
+  }
+
+  /*
+   * Pink/rosy hue range.
+   */
+
+  if (h >= 300 || h < 10) {
+    coolScore += 2;
+  }
+
+  /*
+   * ----------------------------------------
+   * 7. UNDERTONE
    * ----------------------------------------
    */
 
   let undertone;
 
   /*
-   * Olive gets checked first because olive
-   * can otherwise be incorrectly classified
+   * Olive is checked before warm because
+   * olive can contain a strong yellow
+   * component and otherwise get classified
    * as warm.
+   *
+   * We require a meaningful olive score
+   * rather than simply checking whether
+   * green is greater than red.
    */
 
-  if (oliveScore > 18 && g >= r - 5) {
-
+  if (
+    oliveScore >= 5 &&
+    oliveScore > warmScore
+  ) {
     undertone = "Olive";
 
-  } else if (redStrength > 35 && r > g) {
-
-    undertone = "Warm";
-
-  } else if (blueStrength > 18) {
-
+  } else if (
+    coolScore >= 4 &&
+    coolScore > warmScore
+  ) {
     undertone = "Cool";
 
   } else if (
-    yellowStrength > 28 &&
-    r >= g
+    warmScore >= 3
   ) {
-
     undertone = "Warm";
 
   } else {
-
     undertone = "Neutral";
-
   }
 
   /*
    * ----------------------------------------
-   * 6. UNDERTONE SUBTYPE
+   * 8. HUE FAMILY
+   * ----------------------------------------
+   */
+
+  let hueFamily;
+
+  if (h >= 5 && h < 15) {
+
+    hueFamily = "Peach";
+
+  } else if (h >= 15 && h < 35) {
+
+    hueFamily = "Golden";
+
+  } else if (h >= 35 && h < 55) {
+
+    hueFamily = "Yellow";
+
+  } else if (h >= 55 && h < 90) {
+
+    hueFamily = "Olive";
+
+  } else if (h >= 0 && h < 5) {
+
+    hueFamily = "Red";
+
+  } else if (h >= 330 && h <= 360) {
+
+    hueFamily = "Rosy";
+
+  } else {
+
+    hueFamily = "Neutral";
+  }
+
+  /*
+   * ----------------------------------------
+   * 9. UNDERTONE SUBTYPE
    * ----------------------------------------
    */
 
@@ -193,36 +348,50 @@ export function analyzeSkin(rgb) {
   if (undertone === "Warm") {
 
     if (h >= 5 && h < 18) {
+
       undertoneDetail = "Peach";
 
     } else if (h >= 18 && h < 40) {
+
       undertoneDetail = "Golden";
 
     } else {
+
       undertoneDetail = "Yellow";
     }
 
   } else if (undertone === "Cool") {
 
-    if (
-      h >= 330 ||
-      h < 8
-    ) {
+    if (h >= 330 || h < 8) {
+
       undertoneDetail = "Rosy";
 
     } else {
+
       undertoneDetail = "Pink";
     }
 
   } else if (undertone === "Olive") {
 
-    if (yellowStrength > 35) {
+    /*
+     * Distinguish different olive appearances.
+     */
+
+    if (
+      greenBlueRatio > 0.075 &&
+      yellowStrength > 30
+    ) {
+
       undertoneDetail = "Golden Olive";
 
-    } else if (greenStrength > 10) {
+    } else if (
+      greenBlueRatio > 0.065
+    ) {
+
       undertoneDetail = "Green Olive";
 
     } else {
+
       undertoneDetail = "Neutral Olive";
     }
 
@@ -233,7 +402,7 @@ export function analyzeSkin(rgb) {
 
   /*
    * ----------------------------------------
-   * 7. STRENGTH
+   * 10. UNDERTONE STRENGTH
    * ----------------------------------------
    */
 
@@ -247,9 +416,7 @@ export function analyzeSkin(rgb) {
 
     undertoneStrength = "Strong";
 
-  } else if (
-    undertoneMagnitude > 45
-  ) {
+  } else if (undertoneMagnitude > 45) {
 
     undertoneStrength = "Moderate";
 
@@ -260,7 +427,7 @@ export function analyzeSkin(rgb) {
 
   /*
    * ----------------------------------------
-   * 8. RETURN COMPLETE PROFILE
+   * 11. RETURN COMPLETE PROFILE
    * ----------------------------------------
    */
 

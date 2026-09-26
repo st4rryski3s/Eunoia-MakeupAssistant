@@ -51,29 +51,113 @@ export function rgbToHsl(r, g, b) {
 }
 
 export function averageRGB(imageData) {
-  if (!imageData || !imageData.data || imageData.data.length === 0) {
-    return { r: 0, g: 0, b: 0 };
+  if (
+    !imageData ||
+    !imageData.data ||
+    imageData.data.length === 0
+  ) {
+    return {
+      r: 0,
+      g: 0,
+      b: 0
+    };
   }
 
   const pixels = imageData.data;
+  const samples = [];
 
-  let r = 0;
-  let g = 0;
-  let b = 0;
+  for (
+    let i = 0;
+    i < pixels.length;
+    i += 4
+  ) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    const a = pixels[i + 3];
 
-  let count = 0;
+    /*
+     * Ignore transparent pixels.
+     */
+    if (a < 200) {
+      continue;
+    }
 
-  for (let i = 0; i < pixels.length; i += 4) {
-    r += pixels[i];
-    g += pixels[i + 1];
-    b += pixels[i + 2];
+    /*
+     * Calculate brightness.
+     */
+    const brightness =
+      (r + g + b) / 3;
 
-    count++;
+    /*
+     * Ignore extremely dark or extremely
+     * bright pixels.
+     */
+    if (
+      brightness < 25 ||
+      brightness > 245
+    ) {
+      continue;
+    }
+
+    samples.push({
+      r,
+      g,
+      b
+    });
+  }
+
+  if (samples.length === 0) {
+    return {
+      r: 0,
+      g: 0,
+      b: 0
+    };
+  }
+
+  /*
+   * Sort each channel separately.
+   */
+  const red = samples
+    .map(pixel => pixel.r)
+    .sort((a, b) => a - b);
+
+  const green = samples
+    .map(pixel => pixel.g)
+    .sort((a, b) => a - b);
+
+  const blue = samples
+    .map(pixel => pixel.b)
+    .sort((a, b) => a - b);
+
+  /*
+   * Use the middle 80% of the values.
+   */
+  const trim = Math.floor(
+    samples.length * 0.10
+  );
+
+  function trimmedMean(values) {
+    const middle =
+      values.slice(
+        trim,
+        values.length - trim
+      );
+
+    const total =
+      middle.reduce(
+        (sum, value) => sum + value,
+        0
+      );
+
+    return Math.round(
+      total / middle.length
+    );
   }
 
   return {
-    r: Math.round(r / count),
-    g: Math.round(g / count),
-    b: Math.round(b / count)
+    r: trimmedMean(red),
+    g: trimmedMean(green),
+    b: trimmedMean(blue)
   };
 }

@@ -1,5 +1,9 @@
 import { averageRGB } from "./colourUtils";
 
+/*
+ * Extracts several skin regions from the face instead
+ * of relying on one central crop.
+ */
 export function extractSkinColor(imageElement, landmarks) {
   if (!imageElement) {
     throw new Error("Image element not found.");
@@ -11,6 +15,16 @@ export function extractSkinColor(imageElement, landmarks) {
 
   const face = landmarks[0];
 
+  const imageWidth = imageElement.naturalWidth;
+  const imageHeight = imageElement.naturalHeight;
+
+  if (!imageWidth || !imageHeight) {
+    throw new Error("Image dimensions are not available.");
+  }
+
+  /*
+   * Find the bounding box of the face.
+   */
   const xs = face.map(point => point.x);
   const ys = face.map(point => point.y);
 
@@ -19,22 +33,112 @@ export function extractSkinColor(imageElement, landmarks) {
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
 
-  const centerX = (minX + maxX) / 2;
-  const centerY = (minY + maxY) / 2;
+  const faceWidth = maxX - minX;
+  const faceHeight = maxY - minY;
 
-  const imageWidth = imageElement.naturalWidth;
-  const imageHeight = imageElement.naturalHeight;
+  /*
+   * Multiple regions expressed relative to the face.
+   *
+   * These are approximate regions, not individual
+   * MediaPipe landmark indices.
+   */
+  const regions = [
+    {
+      name: "leftCheek",
+      x: minX + faceWidth * 0.27,
+      y: minY + faceHeight * 0.58
+    },
 
-  console.log("Image dimensions:", imageWidth, imageHeight);
-  console.log("Face center:", centerX, centerY);
+    {
+      name: "rightCheek",
+      x: minX + faceWidth * 0.73,
+      y: minY + faceHeight * 0.58
+    },
 
-  if (!imageWidth || !imageHeight) {
-    throw new Error("Image dimensions are not available.");
+    {
+      name: "forehead",
+      x: minX + faceWidth * 0.50,
+      y: minY + faceHeight * 0.25
+    }
+  ];
+
+  const samples = [];
+
+  for (const region of regions) {
+    const rgb = sampleRegion(
+      imageElement,
+      region.x,
+      region.y,
+      faceWidth * imageWidth,
+      faceHeight * imageHeight
+    );
+
+    if (rgb) {
+      samples.push(rgb);
+
+      console.log(
+        `${region.name}:`,
+        rgb
+      );
+    }
   }
 
+  if (samples.length === 0) {
+    throw new Error(
+      "Could not obtain a valid skin sample."
+    );
+  }
+
+  /*
+   * Average the valid facial regions.
+   */
+  const r =
+    samples.reduce(
+      (sum, color) => sum + color.r,
+      0
+    ) / samples.length;
+
+  const g =
+    samples.reduce(
+      (sum, color) => sum + color.g,
+      0
+    ) / samples.length;
+
+  const b =
+    samples.reduce(
+      (sum, color) => sum + color.b,
+      0
+    ) / samples.length;
+
+  const result = {
+    r: Math.round(r),
+    g: Math.round(g),
+    b: Math.round(b)
+  };
+
+  console.log(
+    "Combined skin RGB:",
+    result
+  );
+
+  return result;
+}
+
+
+/*
+ * Samples a small region around a normalized
+ * face position.
+ */
+function sampleRegion(
+  imageElement,
+  normalizedX,
+  normalizedY,
+  faceWidthPixels,
+  faceHeightPixels
+) {
   const canvas = document.createElement("canvas");
 
-  const size = 80;
+  const size = 40;
 
   canvas.width = size;
   canvas.height = size;
@@ -42,41 +146,60 @@ export function extractSkinColor(imageElement, landmarks) {
   const ctx = canvas.getContext("2d");
 
   if (!ctx) {
-    throw new Error("Could not create canvas context.");
+    return null;
   }
 
+  const imageWidth = imageElement.naturalWidth;
+  const imageHeight = imageElement.naturalHeight;
+
+  const centerX =
+    normalizedX * imageWidth;
+
+  const centerY =
+    normalizedY * imageHeight;
+
   /*
-   * Take a smaller region around the center
-   * of the detected face.
+   * Keep the sample relatively small.
    */
-  const cropWidth = imageWidth * 0.12;
-  const cropHeight = imageHeight * 0.12;
+  const cropWidth =
+    Math.max(
+      20,
+      Math.min(
+        faceWidthPixels * 0.18,
+        imageWidth * 0.12
+      )
+    );
+
+  const cropHeight =
+    Math.max(
+      20,
+      Math.min(
+        faceHeightPixels * 0.18,
+        imageHeight * 0.12
+      )
+    );
 
   let sourceX =
-    centerX * imageWidth - cropWidth / 2;
+    centerX - cropWidth / 2;
 
   let sourceY =
-    centerY * imageHeight - cropHeight / 2;
+    centerY - cropHeight / 2;
 
-  /*
-   * Keep the crop inside the image.
-   */
   sourceX = Math.max(
     0,
-    Math.min(sourceX, imageWidth - cropWidth)
+    Math.min(
+      sourceX,
+      imageWidth - cropWidth
+    )
   );
 
   sourceY = Math.max(
     0,
-    Math.min(sourceY, imageHeight - cropHeight)
+    Math.min(
+      sourceY,
+      imageHeight - cropHeight
+    )
   );
-
-  console.log("Crop:", {
-    sourceX,
-    sourceY,
-    cropWidth,
-    cropHeight
-  });
 
   ctx.drawImage(
     imageElement,
@@ -90,24 +213,13 @@ export function extractSkinColor(imageElement, landmarks) {
     size
   );
 
-  const imageData = ctx.getImageData(
-    0,
-    0,
-    size,
-    size
-  );
+  const imageData =
+    ctx.getImageData(
+      0,
+      0,
+      size,
+      size
+    );
 
-  console.log(
-    "First pixel:",
-    imageData.data[0],
-    imageData.data[1],
-    imageData.data[2],
-    imageData.data[3]
-  );
-
-  const rgb = averageRGB(imageData);
-
-  console.log("Extracted RGB:", rgb);
-
-  return rgb;
+  return averageRGB(imageData);
 }
