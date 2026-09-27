@@ -1,3 +1,30 @@
+/*
+ * =========================================================
+ * EUNOIA MATCHING ENGINE
+ * =========================================================
+ *
+ * Main goals:
+ *
+ * 1. Make complexion matching much more sensitive to depth.
+ * 2. Give undertone meaningful weight.
+ * 3. Use hue family / undertone detail when available.
+ * 4. Do not use product RGB/HSL.
+ * 5. Treat makeup categories differently.
+ * 6. Keep budget as a HARD filter.
+ * 7. Return decimal match percentages.
+ *
+ * =========================================================
+ */
+
+/*
+ * ---------------------------------------------------------
+ * DEPTH ORDER
+ * ---------------------------------------------------------
+ *
+ * These values correspond to the depth scale used by the
+ * product database and the P2 skin analysis mapping.
+ */
+
 const depthOrder = [
   "fair",
   "fair-medium",
@@ -39,16 +66,53 @@ function normalizeArray(value) {
 
 /*
  * ---------------------------------------------------------
- * DEPTH SCORE
+ * GENERIC ARRAY MATCHING
  * ---------------------------------------------------------
  */
 
-function getDepthScore(userDepth, productDepth) {
-  const normalizedUserDepth = normalize(userDepth);
-  const normalizedProductDepth = normalize(productDepth);
+function arrayIncludesNormalized(array, value) {
+  return normalizeArray(array).includes(normalize(value));
+}
 
-  const userIndex = depthOrder.indexOf(normalizedUserDepth);
-  const productIndex = depthOrder.indexOf(normalizedProductDepth);
+/*
+ * ---------------------------------------------------------
+ * DEPTH MATCHING
+ * ---------------------------------------------------------
+ *
+ * Much stricter than the old matcher.
+ *
+ * Exact:
+ *   100
+ *
+ * 1 level away:
+ *   78
+ *
+ * 2 levels away:
+ *   50
+ *
+ * 3 levels away:
+ *   25
+ *
+ * 4 levels away:
+ *   10
+ *
+ * 5+:
+ *   0
+ *
+ * This makes visibly different complexion depths separate
+ * much more strongly.
+ */
+
+function getDepthSimilarity(userDepth, productDepth) {
+  const user = normalize(userDepth);
+  const product = normalize(productDepth);
+
+  if (!user || !product) {
+    return 0;
+  }
+
+  const userIndex = depthOrder.indexOf(user);
+  const productIndex = depthOrder.indexOf(product);
 
   if (userIndex === -1 || productIndex === -1) {
     return 0;
@@ -57,18 +121,22 @@ function getDepthScore(userDepth, productDepth) {
   const difference = Math.abs(userIndex - productIndex);
 
   if (difference === 0) {
-    return 50;
+    return 100;
   }
 
   if (difference === 1) {
-    return 40;
+    return 78;
   }
 
   if (difference === 2) {
-    return 25;
+    return 50;
   }
 
   if (difference === 3) {
+    return 25;
+  }
+
+  if (difference === 4) {
     return 10;
   }
 
@@ -77,11 +145,20 @@ function getDepthScore(userDepth, productDepth) {
 
 /*
  * ---------------------------------------------------------
- * UNDERTONE SCORE
+ * UNDERTONE MATCHING
  * ---------------------------------------------------------
+ *
+ * Returns a percentage rather than raw points.
+ *
+ * Exact matches are strongest.
+ *
+ * Neutral is somewhat flexible.
+ *
+ * Olive has a meaningful relationship with warm, but not
+ * the same strength as an exact olive match.
  */
 
-function getUndertoneScore(userUndertone, productUndertone) {
+function getUndertoneSimilarity(userUndertone, productUndertone) {
   const user = normalize(userUndertone);
   const product = normalize(productUndertone);
 
@@ -89,66 +166,327 @@ function getUndertoneScore(userUndertone, productUndertone) {
     return 0;
   }
 
-  /*
-   * Exact match
-   */
   if (user === product) {
-    return 50;
+    return 100;
   }
 
-  /*
-   * Neutral works with warm/cool/olive
-   */
-  if (
-    user === "neutral" &&
-    (
+  if (user === "neutral") {
+    if (
       product === "warm" ||
       product === "cool" ||
       product === "olive"
-    )
-  ) {
-    return 30;
+    ) {
+      return 65;
+    }
   }
 
-  if (
-    product === "neutral" &&
-    (
+  if (product === "neutral") {
+    if (
       user === "warm" ||
       user === "cool" ||
       user === "olive"
-    )
-  ) {
-    return 30;
+    ) {
+      return 65;
+    }
   }
 
   /*
-   * Warm / olive compatibility
+   * Warm and olive can overlap.
    */
   if (
-    (
-      user === "olive" &&
-      product === "warm"
-    ) ||
-    (
-      user === "warm" &&
-      product === "olive"
-    )
+    (user === "olive" && product === "warm") ||
+    (user === "warm" && product === "olive")
   ) {
-    return 25;
+    return 70;
   }
 
-  return 0;
+  /*
+   * Cool and olive are generally less directly compatible
+   * than warm and olive.
+   */
+  if (
+    (user === "olive" && product === "cool") ||
+    (user === "cool" && product === "olive")
+  ) {
+    return 35;
+  }
+
+  /*
+   * Warm vs cool is a strong mismatch.
+   */
+  return 10;
 }
 
 /*
  * ---------------------------------------------------------
- * SKIN TYPE SCORE
+ * UNDERTONE DETAIL MATCHING
  * ---------------------------------------------------------
  *
- * Exact match = 20 points
+ * Examples of product details:
+ *
+ * pink
+ * golden
+ * peach
+ * yellow
+ * red
+ * neutral
+ * warm beige
+ * rosy
+ *
+ * We use token overlap rather than requiring exact strings.
  */
 
-function getSkinTypeScore(user, product) {
+function getUndertoneDetailTokens(value) {
+  if (typeof value !== "string") {
+    return [];
+  }
+
+  return value
+    .toLowerCase()
+    .split(/[/,&+|()\-]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getUndertoneDetailSimilarity(user, product) {
+  const userDetail = normalize(user.undertoneDetail);
+  const productDetail = normalize(product.undertoneDetail);
+
+  if (!userDetail || !productDetail) {
+    return null;
+  }
+
+  if (userDetail === productDetail) {
+    return 100;
+  }
+
+  const userTokens = getUndertoneDetailTokens(userDetail);
+  const productTokens = getUndertoneDetailTokens(productDetail);
+
+  if (
+    userTokens.length === 0 ||
+    productTokens.length === 0
+  ) {
+    return null;
+  }
+
+  const matches = userTokens.filter((token) =>
+    productTokens.some(
+      (productToken) =>
+        productToken.includes(token) ||
+        token.includes(productToken)
+    )
+  );
+
+  if (matches.length > 0) {
+    return Math.min(
+      90,
+      55 + matches.length * 15
+    );
+  }
+
+  return 20;
+}
+
+/*
+ * ---------------------------------------------------------
+ * HUE FAMILY HELPERS
+ * ---------------------------------------------------------
+ */
+
+function normalizeHueFamily(value) {
+  if (Array.isArray(value)) {
+    return value
+      .filter(Boolean)
+      .map((item) => normalize(item));
+  }
+
+  if (typeof value === "string") {
+    return [normalize(value)];
+  }
+
+  return [];
+}
+
+/*
+ * ---------------------------------------------------------
+ * COMPLEXION HUE MATCHING
+ * ---------------------------------------------------------
+ *
+ * Used mainly for foundation / concealer.
+ *
+ * IMPORTANT:
+ *
+ * Product hueFamily and skin hueFamily are not always the
+ * same kind of data.
+ *
+ * Therefore we only award a strong score when there is
+ * meaningful semantic overlap.
+ */
+
+function getComplexionHueSimilarity(user, product) {
+  const userHue = normalizeHueFamily(user.hueFamily);
+  const productHue = normalizeHueFamily(product.hueFamily);
+
+  if (
+    userHue.length === 0 ||
+    productHue.length === 0
+  ) {
+    return null;
+  }
+
+  const overlap = userHue.filter((userValue) =>
+    productHue.some(
+      (productValue) =>
+        productValue.includes(userValue) ||
+        userValue.includes(productValue)
+    )
+  );
+
+  if (overlap.length > 0) {
+    return 100;
+  }
+
+  /*
+   * Some common related complexion families.
+   */
+
+  const relatedFamilies = {
+    yellow: ["golden", "warm", "olive"],
+    golden: ["yellow", "warm", "olive"],
+    warm: ["yellow", "golden", "peach"],
+    peach: ["warm", "golden"],
+    pink: ["rose", "rosy", "cool"],
+    rose: ["pink", "rosy", "cool"],
+    rosy: ["pink", "rose", "cool"],
+    red: ["rose", "rosy", "pink"],
+    olive: ["yellow", "golden", "warm"],
+  };
+
+  for (const userValue of userHue) {
+    const related = relatedFamilies[userValue] || [];
+
+    for (const productValue of productHue) {
+      if (related.includes(productValue)) {
+        return 65;
+      }
+    }
+  }
+
+  return 20;
+}
+
+/*
+ * ---------------------------------------------------------
+ * MAKEUP COLOR FAMILY MATCHING
+ * ---------------------------------------------------------
+ *
+ * For blush / lipstick / eyeshadow, hueFamily describes
+ * makeup colors rather than skin hue.
+ *
+ * We therefore use the user's undertone to determine
+ * broad compatible color families.
+ */
+
+const undertoneColorFamilies = {
+  warm: [
+    "peach",
+    "coral",
+    "terracotta",
+    "orange",
+    "warm",
+    "gold",
+    "bronze",
+    "brown",
+    "brick",
+    "red",
+    "nude",
+    "caramel",
+  ],
+
+  cool: [
+    "pink",
+    "rose",
+    "berry",
+    "plum",
+    "mauve",
+    "red",
+    "burgundy",
+    "purple",
+    "cool",
+    "taupe",
+  ],
+
+  neutral: [
+    "pink",
+    "rose",
+    "peach",
+    "nude",
+    "brown",
+    "mauve",
+    "red",
+    "berry",
+    "coral",
+    "neutral",
+  ],
+
+  olive: [
+    "peach",
+    "coral",
+    "terracotta",
+    "brown",
+    "bronze",
+    "gold",
+    "brick",
+    "nude",
+    "warm",
+  ],
+};
+
+function getMakeupColorSimilarity(user, product) {
+  const productColors = normalizeHueFamily(
+    product.hueFamily
+  );
+
+  if (productColors.length === 0) {
+    return null;
+  }
+
+  const undertone = normalize(user.undertone);
+
+  if (!undertone) {
+    return null;
+  }
+
+  const compatibleColors =
+    undertoneColorFamilies[undertone] || [];
+
+  const matches = productColors.filter((color) =>
+    compatibleColors.some(
+      (compatible) =>
+        color.includes(compatible) ||
+        compatible.includes(color)
+    )
+  );
+
+  if (matches.length >= 2) {
+    return 100;
+  }
+
+  if (matches.length === 1) {
+    return 80;
+  }
+
+  return 35;
+}
+
+/*
+ * ---------------------------------------------------------
+ * SKIN TYPE
+ * ---------------------------------------------------------
+ */
+
+function getSkinTypeSimilarity(user, product) {
   const userSkinType = normalize(user.skinType);
 
   const productSkinTypes = normalizeArray(
@@ -159,26 +497,24 @@ function getSkinTypeScore(user, product) {
     !userSkinType ||
     productSkinTypes.length === 0
   ) {
-    return 0;
+    return null;
   }
 
-  if (productSkinTypes.includes(userSkinType)) {
-    return 20;
-  }
-
-  return 0;
+  return productSkinTypes.includes(userSkinType)
+    ? 100
+    : 0;
 }
 
 /*
  * ---------------------------------------------------------
- * LOOK SCORE
+ * LOOK
  * ---------------------------------------------------------
- *
- * Exact match = 15 points
  */
 
-function getLookScore(user, product) {
-  const userLook = normalize(user.look);
+function getLookSimilarity(user, product) {
+  const userLook = normalize(
+    user.look || user.preferredLook
+  );
 
   const productLooks = normalizeArray(
     product.looks
@@ -188,27 +524,23 @@ function getLookScore(user, product) {
     !userLook ||
     productLooks.length === 0
   ) {
-    return 0;
+    return null;
   }
 
-  if (productLooks.includes(userLook)) {
-    return 15;
-  }
-
-  return 0;
+  return productLooks.includes(userLook)
+    ? 100
+    : 0;
 }
 
 /*
  * ---------------------------------------------------------
- * BRAND SCORE
+ * BRAND
  * ---------------------------------------------------------
- *
- * Preferred brand = 10 points
  */
 
-function getBrandScore(user, product) {
+function getBrandSimilarity(user, product) {
   const preferredBrands = normalizeArray(
-    user.brands
+    user.brands || user.preferredBrands
   );
 
   const productBrand = normalize(product.brand);
@@ -217,11 +549,167 @@ function getBrandScore(user, product) {
     preferredBrands.length === 0 ||
     !productBrand
   ) {
+    return null;
+  }
+
+  return preferredBrands.includes(productBrand)
+    ? 100
+    : 0;
+}
+
+/*
+ * ---------------------------------------------------------
+ * CATEGORY
+ * ---------------------------------------------------------
+ */
+
+function isComplexionCategory(category) {
+  return (
+    category === "foundation" ||
+    category === "concealer"
+  );
+}
+
+function isColorCategory(category) {
+  return (
+    category === "blush" ||
+    category === "lipstick" ||
+    category === "eyeshadow"
+  );
+}
+
+/*
+ * ---------------------------------------------------------
+ * COMPLEXION SCORE
+ * ---------------------------------------------------------
+ *
+ * FOUNDATION / CONCEALER
+ *
+ * Depth is the most important factor.
+ */
+
+function getComplexionScore(user, product) {
+  const depth = getDepthSimilarity(
+    user.depth,
+    product.depth
+  );
+
+  const undertone = getUndertoneSimilarity(
+    user.undertone,
+    product.undertone
+  );
+
+  const hue = getComplexionHueSimilarity(
+    user,
+    product
+  );
+
+  const detail = getUndertoneDetailSimilarity(
+    user,
+    product
+  );
+
+  /*
+   * If data is missing, redistribute the weight instead
+   * of automatically treating the product as a mismatch.
+   */
+
+  let total = 0;
+  let weight = 0;
+
+  if (depth !== null) {
+    total += depth * 0.40;
+    weight += 0.40;
+  }
+
+  if (undertone !== null) {
+    total += undertone * 0.25;
+    weight += 0.25;
+  }
+
+  if (hue !== null) {
+    total += hue * 0.15;
+    weight += 0.15;
+  }
+
+  if (detail !== null) {
+    total += detail * 0.05;
+    weight += 0.05;
+  }
+
+  if (weight === 0) {
     return 0;
   }
 
-  if (preferredBrands.includes(productBrand)) {
-    return 10;
+  /*
+   * Normalize if some optional fields are unavailable.
+   */
+
+  return total / weight;
+}
+
+/*
+ * ---------------------------------------------------------
+ * COLOR PRODUCT SCORE
+ * ---------------------------------------------------------
+ *
+ * BLUSH / LIPSTICK / EYESHADOW
+ */
+
+function getColorProductScore(user, product) {
+  const undertone = getUndertoneSimilarity(
+    user.undertone,
+    product.undertone
+  );
+
+  const color = getMakeupColorSimilarity(
+    user,
+    product
+  );
+
+  const detail = getUndertoneDetailSimilarity(
+    user,
+    product
+  );
+
+  let total = 0;
+  let weight = 0;
+
+  if (undertone !== null) {
+    total += undertone * 0.40;
+    weight += 0.40;
+  }
+
+  if (color !== null) {
+    total += color * 0.45;
+    weight += 0.45;
+  }
+
+  if (detail !== null) {
+    total += detail * 0.15;
+    weight += 0.15;
+  }
+
+  if (weight === 0) {
+    return 0;
+  }
+
+  return total / weight;
+}
+
+/*
+ * ---------------------------------------------------------
+ * CATEGORY BEAUTY SCORE
+ * ---------------------------------------------------------
+ */
+
+function getBeautySimilarity(user, product) {
+  if (isComplexionCategory(product.category)) {
+    return getComplexionScore(user, product);
+  }
+
+  if (isColorCategory(product.category)) {
+    return getColorProductScore(user, product);
   }
 
   return 0;
@@ -229,227 +717,110 @@ function getBrandScore(user, product) {
 
 /*
  * ---------------------------------------------------------
- * BLUSH SCORE
- * ---------------------------------------------------------
- */
-
-function getBlushScore(user, product) {
-  const userUndertone = normalize(user.undertone);
-  const productUndertone = normalize(product.undertone);
-
-  if (
-    userUndertone &&
-    productUndertone &&
-    userUndertone === productUndertone
-  ) {
-    return 70;
-  }
-
-  if (
-    userUndertone === "neutral" ||
-    productUndertone === "neutral"
-  ) {
-    return 50;
-  }
-
-  if (
-    (
-      userUndertone === "olive" &&
-      productUndertone === "warm"
-    ) ||
-    (
-      userUndertone === "warm" &&
-      productUndertone === "olive"
-    )
-  ) {
-    return 60;
-  }
-
-  return 20;
-}
-
-/*
- * ---------------------------------------------------------
- * LIPSTICK SCORE
- * ---------------------------------------------------------
- */
-
-function getLipstickScore(user, product) {
-  const userUndertone = normalize(user.undertone);
-  const productUndertone = normalize(product.undertone);
-
-  if (
-    userUndertone &&
-    productUndertone &&
-    userUndertone === productUndertone
-  ) {
-    return 70;
-  }
-
-  if (
-    userUndertone === "neutral" ||
-    productUndertone === "neutral"
-  ) {
-    return 50;
-  }
-
-  if (
-    (
-      userUndertone === "olive" &&
-      productUndertone === "warm"
-    ) ||
-    (
-      userUndertone === "warm" &&
-      productUndertone === "olive"
-    )
-  ) {
-    return 60;
-  }
-
-  return 20;
-}
-
-/*
- * ---------------------------------------------------------
- * EYESHADOW SCORE
- * ---------------------------------------------------------
- */
-
-function getEyeshadowScore(user, product) {
-  const userUndertone = normalize(user.undertone);
-  const productUndertone = normalize(product.undertone);
-
-  if (
-    userUndertone &&
-    productUndertone &&
-    userUndertone === productUndertone
-  ) {
-    return 70;
-  }
-
-  if (
-    userUndertone === "neutral" ||
-    productUndertone === "neutral"
-  ) {
-    return 50;
-  }
-
-  if (
-    (
-      userUndertone === "olive" &&
-      productUndertone === "warm"
-    ) ||
-    (
-      userUndertone === "warm" &&
-      productUndertone === "olive"
-    )
-  ) {
-    return 60;
-  }
-
-  return 20;
-}
-
-/*
- * ---------------------------------------------------------
- * BASE BEAUTY MATCH
- * ---------------------------------------------------------
- */
-
-function getBaseMatchScore(user, product) {
-  if (product.category === "blush") {
-    return getBlushScore(user, product);
-  }
-
-  if (product.category === "lipstick") {
-    return getLipstickScore(user, product);
-  }
-
-  if (product.category === "eyeshadow") {
-    return getEyeshadowScore(user, product);
-  }
-
-  const depthScore = getDepthScore(
-    user.depth,
-    product.depth
-  );
-
-  const undertoneScore = getUndertoneScore(
-    user.undertone,
-    product.undertone
-  );
-
-  return depthScore + undertoneScore;
-}
-
-/*
- * ---------------------------------------------------------
- * BASE SCORE NORMALIZATION
- * ---------------------------------------------------------
- *
- * 55 points = complexion / undertone
- * 20 points = skin type
- * 15 points = look
- * 10 points = preferred brand
- *
- * Total = 100
- */
-
-function getBaseScorePercentage(user, product) {
-  const baseScore = getBaseMatchScore(
-    user,
-    product
-  );
-
-  const maximumBaseScore =
-    product.category === "blush" ||
-    product.category === "lipstick" ||
-    product.category === "eyeshadow"
-      ? 70
-      : 100;
-
-  if (maximumBaseScore === 0) {
-    return 0;
-  }
-
-  return (
-    (baseScore / maximumBaseScore) * 55
-  );
-}
-
-/*
- * ---------------------------------------------------------
  * FINAL MATCH SCORE
  * ---------------------------------------------------------
+ *
+ * Complexion:
+ *
+ *   Beauty compatibility 85%
+ *   Skin type              5%
+ *   Look                   4%
+ *   Brand                  3%
+ *   Data quality           3%
+ *
+ * Color products:
+ *
+ *   Beauty compatibility  75%
+ *   Skin type              8%
+ *   Look                   8%
+ *   Brand                  5%
+ *   Data quality           4%
+ *
+ * The data-quality component prevents products with almost
+ * no useful classification from automatically receiving the
+ * same score as well-classified products.
  */
 
 export function calculateMatch(user, product) {
-  const baseScore = getBaseScorePercentage(
-    user,
-    product
-  );
+  const category = normalize(product.category);
 
-  const skinTypeScore = getSkinTypeScore(
-    user,
-    product
-  );
+  const beautySimilarity =
+    getBeautySimilarity(user, product);
 
-  const lookScore = getLookScore(
-    user,
-    product
-  );
+  const skinTypeSimilarity =
+    getSkinTypeSimilarity(user, product);
 
-  const brandScore = getBrandScore(
-    user,
-    product
-  );
+  const lookSimilarity =
+    getLookSimilarity(user, product);
 
-  return Math.round(
-    baseScore +
-      skinTypeScore +
-      lookScore +
-      brandScore
+  const brandSimilarity =
+    getBrandSimilarity(user, product);
+
+  let score;
+
+  if (isComplexionCategory(category)) {
+    score =
+      beautySimilarity * 0.85 +
+      (skinTypeSimilarity ?? 50) * 0.05 +
+      (lookSimilarity ?? 50) * 0.04 +
+      (brandSimilarity ?? 50) * 0.03 +
+      getDataQualityScore(product) * 0.03;
+  } else {
+    score =
+      beautySimilarity * 0.75 +
+      (skinTypeSimilarity ?? 50) * 0.08 +
+      (lookSimilarity ?? 50) * 0.08 +
+      (brandSimilarity ?? 50) * 0.05 +
+      getDataQualityScore(product) * 0.04;
+  }
+
+  /*
+   * Keep score within 0–100.
+   */
+
+  return Math.max(
+    0,
+    Math.min(100, score)
   );
+}
+
+/*
+ * ---------------------------------------------------------
+ * DATA QUALITY
+ * ---------------------------------------------------------
+ *
+ * This does NOT invent missing data.
+ *
+ * It simply rewards products that actually contain useful
+ * classification information.
+ */
+
+function getDataQualityScore(product) {
+  const fields = [
+    product.depth,
+    product.toneLevel,
+    product.undertone,
+    product.undertoneDetail,
+    product.hueFamily,
+  ];
+
+  let present = 0;
+
+  fields.forEach((field) => {
+    if (
+      field !== null &&
+      field !== undefined &&
+      field !== "" &&
+      !(
+        Array.isArray(field) &&
+        field.length === 0
+      )
+    ) {
+      present += 1;
+    }
+  });
+
+  return (present / fields.length) * 100;
 }
 
 /*
@@ -461,92 +832,96 @@ export function calculateMatch(user, product) {
 function getMatchReason(user, product) {
   const reasons = [];
 
-  /*
-   * DEPTH
-   */
-
-  const depthScore = getDepthScore(
-    user.depth,
-    product.depth
-  );
-
-  if (
-    product.category !== "blush" &&
-    product.category !== "lipstick" &&
-    product.category !== "eyeshadow"
-  ) {
-    if (depthScore === 50) {
-      reasons.push("Exact depth");
-    } else if (depthScore === 40) {
-      reasons.push("Nearby depth");
-    } else if (depthScore === 25) {
-      reasons.push("Moderately close depth");
-    } else if (depthScore === 10) {
-      reasons.push("Somewhat different depth");
-    }
-  }
+  const category = normalize(product.category);
 
   /*
-   * UNDERTONE
+   * FOUNDATION / CONCEALER
    */
 
-  const userUndertone = normalize(
-    user.undertone
-  );
+  if (isComplexionCategory(category)) {
+    const depthSimilarity =
+      getDepthSimilarity(
+        user.depth,
+        product.depth
+      );
 
-  const productUndertone = normalize(
-    product.undertone
-  );
-
-  if (
-    product.category === "blush" ||
-    product.category === "lipstick" ||
-    product.category === "eyeshadow"
-  ) {
-    if (
-      userUndertone &&
-      productUndertone &&
-      userUndertone === productUndertone
-    ) {
-      reasons.push(
-        `${product.category} undertone matches`
-      );
-    } else if (
-      userUndertone === "neutral" ||
-      productUndertone === "neutral"
-    ) {
-      reasons.push(
-        `${product.category} undertone is compatible`
-      );
-    } else if (
-      (
-        userUndertone === "olive" &&
-        productUndertone === "warm"
-      ) ||
-      (
-        userUndertone === "warm" &&
-        productUndertone === "olive"
-      )
-    ) {
-      reasons.push(
-        "Warm-olive compatible undertone"
-      );
+    if (depthSimilarity === 100) {
+      reasons.push("Exact skin depth");
+    } else if (depthSimilarity >= 78) {
+      reasons.push("Very close skin depth");
+    } else if (depthSimilarity >= 50) {
+      reasons.push("Moderately close skin depth");
+    } else if (depthSimilarity >= 25) {
+      reasons.push("Different skin depth");
+    } else {
+      reasons.push("Significantly different depth");
     }
-  } else {
-    const undertoneScore =
-      getUndertoneScore(
+
+    const undertoneSimilarity =
+      getUndertoneSimilarity(
         user.undertone,
         product.undertone
       );
 
-    if (undertoneScore === 50) {
+    if (undertoneSimilarity === 100) {
       reasons.push("Exact undertone");
-    } else if (undertoneScore === 30) {
+    } else if (undertoneSimilarity >= 65) {
       reasons.push("Compatible undertone");
-    } else if (undertoneScore === 25) {
-      reasons.push(
-        "Partially compatible undertone"
+    } else if (undertoneSimilarity >= 35) {
+      reasons.push("Partially compatible undertone");
+    } else if (undertoneSimilarity !== null) {
+      reasons.push("Undertone differs");
+    }
+
+    const hueSimilarity =
+      getComplexionHueSimilarity(
+        user,
+        product
       );
+
+    if (hueSimilarity === 100) {
+      reasons.push("Compatible hue family");
+    } else if (
+      hueSimilarity !== null &&
+      hueSimilarity >= 60
+    ) {
+      reasons.push("Related hue family");
+    }
+  }
+
+  /*
+   * BLUSH / LIPSTICK / EYESHADOW
+   */
+
+  if (isColorCategory(category)) {
+    const undertoneSimilarity =
+      getUndertoneSimilarity(
+        user.undertone,
+        product.undertone
+      );
+
+    if (undertoneSimilarity === 100) {
+      reasons.push("Matching undertone");
+    } else if (
+      undertoneSimilarity !== null &&
+      undertoneSimilarity >= 65
+    ) {
+      reasons.push("Compatible undertone");
+    }
+
+    const colorSimilarity =
+      getMakeupColorSimilarity(
+        user,
+        product
+      );
+
+    if (colorSimilarity === 100) {
+      reasons.push("Highly compatible color family");
+    } else if (
+      colorSimilarity !== null &&
+      colorSimilarity >= 80
+    ) {
+      reasons.push("Compatible color family");
     }
   }
 
@@ -554,52 +929,34 @@ function getMatchReason(user, product) {
    * SKIN TYPE
    */
 
-  const skinTypeScore =
-    getSkinTypeScore(
-      user,
-      product
-    );
-
-  if (skinTypeScore > 0) {
-    reasons.push(
-      "Matches your skin type"
-    );
+  if (
+    getSkinTypeSimilarity(user, product) === 100
+  ) {
+    reasons.push("Matches your skin type");
   }
 
   /*
    * LOOK
    */
 
-  const lookScore =
-    getLookScore(
-      user,
-      product
-    );
-
-  if (lookScore > 0) {
-    reasons.push(
-      "Matches your preferred look"
-    );
+  if (
+    getLookSimilarity(user, product) === 100
+  ) {
+    reasons.push("Matches your preferred look");
   }
 
   /*
    * BRAND
    */
 
-  const brandScore =
-    getBrandScore(
-      user,
-      product
-    );
-
-  if (brandScore > 0) {
-    reasons.push(
-      "Preferred brand"
-    );
+  if (
+    getBrandSimilarity(user, product) === 100
+  ) {
+    reasons.push("Preferred brand");
   }
 
   if (reasons.length === 0) {
-    return "Low similarity";
+    return "Limited matching data";
   }
 
   return reasons.join(" + ");
@@ -619,25 +976,30 @@ export function recommendProducts(
 
     /*
      * -----------------------------------------------------
-     * CATEGORY
+     * CATEGORY FILTER
      * -----------------------------------------------------
      */
 
     .filter(
       (product) =>
-        product.category === user.category
+        normalize(product.category) ===
+        normalize(user.category)
     )
 
     /*
      * -----------------------------------------------------
      * CONCEALER CORRECTORS
      * -----------------------------------------------------
+     *
+     * Correctors are not treated as normal concealers.
      */
 
     .filter((product) => {
       if (
-        user.category === "concealer" &&
-        product.type === "corrector"
+        normalize(user.category) ===
+          "concealer" &&
+        normalize(product.type) ===
+          "corrector"
       ) {
         return false;
       }
@@ -647,24 +1009,8 @@ export function recommendProducts(
 
     /*
      * -----------------------------------------------------
-     * BUDGET RANGE
+     * BUDGET FILTER
      * -----------------------------------------------------
-     *
-     * The product must be INSIDE the selected range.
-     *
-     * Examples:
-     *
-     * Under ₹1,000
-     *     0 <= price < 1000
-     *
-     * ₹1,000–₹2,000
-     *     1000 <= price <= 2000
-     *
-     * ₹2,000–₹4,000
-     *     2000 <= price <= 4000
-     *
-     * ₹4,000+
-     *     price >= 4000
      */
 
     .filter((product) => {
@@ -675,31 +1021,38 @@ export function recommendProducts(
       }
 
       /*
-       * If budgetMin exists,
-       * product must be >= minimum.
+       * Minimum
        */
+
       if (
         user.budgetMin !== undefined &&
-        user.budgetMin !== null &&
-        price < Number(user.budgetMin)
+        user.budgetMin !== null
       ) {
-        return false;
+        if (
+          price < Number(user.budgetMin)
+        ) {
+          return false;
+        }
       }
 
       /*
-       * If budgetMax exists,
-       * product must be <= maximum.
+       * Maximum
        *
-       * For ₹4,000+,
-       * budgetMax should be Infinity
-       * or simply omitted.
+       * Infinity is allowed.
        */
+
       if (
         user.budgetMax !== undefined &&
         user.budgetMax !== null &&
-        price > Number(user.budgetMax)
+        Number.isFinite(
+          Number(user.budgetMax)
+        )
       ) {
-        return false;
+        if (
+          price > Number(user.budgetMax)
+        ) {
+          return false;
+        }
       }
 
       return true;
@@ -707,35 +1060,50 @@ export function recommendProducts(
 
     /*
      * -----------------------------------------------------
-     * CALCULATE SCORE
+     * SCORE
      * -----------------------------------------------------
      */
 
-    .map((product) => ({
-      ...product,
+    .map((product) => {
+      const rawScore = calculateMatch(
+        user,
+        product
+      );
 
-      matchScore: Math.round(
-        calculateMatch(
-          user,
-          product
-        )
-      ),
+      return {
+        ...product,
 
-      matchReason:
-        getMatchReason(
-          user,
-          product
-        ),
-    }))
+        /*
+         * Keep two decimal places.
+         *
+         * Example:
+         * 87.34
+         * instead of
+         * 87
+         */
+
+        matchScore:
+          Math.round(
+            rawScore * 100
+          ) / 100,
+
+        matchReason:
+          getMatchReason(
+            user,
+            product
+          ),
+      };
+    })
 
     /*
      * -----------------------------------------------------
-     * HIGHEST MATCH FIRST
+     * SORT
      * -----------------------------------------------------
      */
 
     .sort(
       (a, b) =>
-        b.matchScore - a.matchScore
+        b.matchScore -
+        a.matchScore
     );
 }
