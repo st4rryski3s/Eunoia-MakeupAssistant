@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
-
 import {
   BrowserRouter,
   Routes,
   Route,
-  useLocation,
-  Navigate,
 } from "react-router-dom";
 
 import { supabase } from "./lib/supabase";
@@ -23,182 +20,278 @@ import ShadeMatch from "./pages/ShadeMatch";
 
 import "./App.css";
 
-// --------------------------------------------
-// Scroll to top whenever the page changes
-// --------------------------------------------
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+export default function App() {
 
-  useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "auto",
-    });
-  }, [pathname]);
-
-  return null;
-}
-
-// --------------------------------------------
-// Person 1's GlowMatch routes
-// --------------------------------------------
-
-function GlowMatchRoutes() {
-  return (
-    <>
-      <ScrollToTop />
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-
-        <Route path="/about" element={<About />} />
-
-        <Route path="/scan" element={<Scan />} />
-
-        <Route path="/preferences" element={<Preferences />} />
-
-        <Route path="/results" element={<Results />} />
-
-        <Route path="/kit" element={<KitBuilder />} />
-
-        <Route path="/shade-match" element={<ShadeMatch />} />
-
-        {/* If the user enters an unknown URL, go home */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
-      </Routes>
-    </>
-  );
-}
-
-// --------------------------------------------
-// Main App
-// --------------------------------------------
-
-function App() {
-  const [supabaseStatus, setSupabaseStatus] = useState(
-    "Testing Supabase connection..."
-  );
+  /* =========================================================
+     AUTH STATE
+  ========================================================= */
 
   const [user, setUser] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [showSignup, setShowSignup] = useState(false);
 
-  // --------------------------------------------
-  // Test Supabase connection
-  // --------------------------------------------
+  const [authLoading, setAuthLoading] =
+    useState(true);
 
-  useEffect(() => {
-    async function testSupabase() {
-      const { error } = await supabase.auth.getSession();
+  const [showSignup, setShowSignup] =
+    useState(false);
 
-      if (error) {
-        console.error("Supabase connection error:", error);
-        setSupabaseStatus("Supabase connection failed.");
-        return;
-      }
 
-      setSupabaseStatus("Supabase connected!");
-    }
-
-    testSupabase();
-  }, []);
-
-  // --------------------------------------------
-  // Check existing login session
-  // --------------------------------------------
+  /* =========================================================
+     CHECK EXISTING SESSION
+  ========================================================= */
 
   useEffect(() => {
-    async function getUser() {
+    let mounted = true;
+
+
+    async function getCurrentSession() {
+
       const {
-        data: { session },
+        data,
+        error,
       } = await supabase.auth.getSession();
 
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
+
+      if (error) {
+        console.error(
+          "Error getting Supabase session:",
+          error
+        );
+      }
+
+
+      if (mounted) {
+        setUser(
+          data?.session?.user ?? null
+        );
+
+        setAuthLoading(false);
+      }
     }
 
-    getUser();
 
-    // Listen for login/logout changes
+    getCurrentSession();
+
+
+    /* =======================================================
+       LISTEN FOR LOGIN / LOGOUT
+    ======================================================= */
+
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+      data: authListener,
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+
+          if (mounted) {
+            setUser(
+              session?.user ?? null
+            );
+          }
+
+        }
+      );
+
 
     return () => {
-      subscription.unsubscribe();
+
+      mounted = false;
+
+      authListener?.subscription?.unsubscribe();
+
     };
+
   }, []);
 
-  // --------------------------------------------
-  // Logout
-  // --------------------------------------------
 
-  async function handleLogout() {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error("Logout error:", error);
-      return;
-    }
-
-    setUser(null);
-  }
-
-  // --------------------------------------------
-  // Loading screen
-  // --------------------------------------------
+  /* =========================================================
+     LOADING SCREEN
+  ========================================================= */
 
   if (authLoading) {
+
     return (
-      <div>
-        <h1>GlowMatch</h1>
-        <p>Loading...</p>
+      <div
+        className="
+          flex
+          min-h-screen
+          items-center
+          justify-center
+          bg-[#f7f5f2]
+          text-[#111111]
+        "
+      >
+
+        <div className="text-center">
+
+          <p
+            className="
+              text-3xl
+              font-light
+              tracking-[0.35em]
+            "
+          >
+            EUNOIA
+          </p>
+
+          <p
+            className="
+              mt-5
+              text-xs
+              uppercase
+              tracking-[0.2em]
+              text-black/40
+            "
+          >
+            Loading...
+          </p>
+
+        </div>
+
       </div>
     );
   }
 
-  // --------------------------------------------
-  // Login / Signup
-  // --------------------------------------------
+
+  /* =========================================================
+     AUTH SCREEN
+     
+     If there is no logged-in user:
+     
+     Login
+       ↓
+     Signup
+     
+     The app itself remains locked until authentication.
+  ========================================================= */
 
   if (!user) {
+
+    if (showSignup) {
+
+      return (
+        <Signup
+
+          onSwitchToLogin={() => {
+            setShowSignup(false);
+          }}
+
+          onSignupSuccess={(newUser) => {
+            setUser(newUser);
+          }}
+
+        />
+      );
+
+    }
+
+
     return (
-      <div>
-        {showSignup ? (
-          <Signup
-            onSwitchToLogin={() => setShowSignup(false)}
-            onSignupSuccess={(newUser) => {
-              setUser(newUser);
-            }}
-          />
-        ) : (
-          <Login
-            onSwitchToSignup={() => setShowSignup(true)}
-            onLoginSuccess={(loggedInUser) => {
-              setUser(loggedInUser);
-            }}
-          />
-        )}
-      </div>
+      <Login
+
+        onSwitchToSignup={() => {
+          setShowSignup(true);
+        }}
+
+        onLoginSuccess={(loggedInUser) => {
+          setUser(loggedInUser);
+        }}
+
+      />
     );
   }
 
-  // --------------------------------------------
-  // Logged-in GlowMatch application
-  // --------------------------------------------
+
+  /* =========================================================
+     LOGGED-IN APPLICATION
+  ========================================================= */
 
   return (
     <BrowserRouter>
-      <GlowMatchRoutes />
+
+      <Routes>
+
+        {/* =================================================
+            HOME
+        ================================================= */}
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
+
+        {/* =================================================
+            AI SKIN SCAN
+        ================================================= */}
+
+        <Route
+          path="/scan"
+          element={<Scan />}
+        />
+
+
+        {/* =================================================
+            USER PREFERENCES
+        ================================================= */}
+
+        <Route
+          path="/preferences"
+          element={<Preferences />}
+        />
+
+
+        {/* =================================================
+            RECOMMENDATIONS
+        ================================================= */}
+
+        <Route
+          path="/results"
+          element={<Results />}
+        />
+
+
+        {/* =================================================
+            MY KIT
+        ================================================= */}
+
+        <Route
+          path="/kit"
+          element={<KitBuilder />}
+        />
+
+
+        {/* =================================================
+            SHADE MATCH
+        ================================================= */}
+
+        <Route
+          path="/shade-match"
+          element={<ShadeMatch />}
+        />
+
+
+        {/* =================================================
+            ABOUT
+        ================================================= */}
+
+        <Route
+          path="/about"
+          element={<About />}
+        />
+
+
+        {/* =================================================
+            FALLBACK
+        ================================================= */}
+
+        <Route
+          path="*"
+          element={<Home />}
+        />
+
+      </Routes>
+
     </BrowserRouter>
   );
 }
-
-export default App;

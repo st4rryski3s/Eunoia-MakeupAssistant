@@ -4,7 +4,10 @@ import {
   Menu,
   ShoppingBag,
   X,
+  LogOut,
 } from "lucide-react";
+
+import { supabase } from "../lib/supabase";
 
 const KIT_KEY = "aura-kit";
 
@@ -18,9 +21,7 @@ function getKitCount() {
 
     const parsed = JSON.parse(saved);
 
-    return Array.isArray(parsed)
-      ? parsed.length
-      : 0;
+    return Array.isArray(parsed) ? parsed.length : 0;
   } catch {
     return 0;
   }
@@ -33,31 +34,16 @@ export default function EunoiaNav({
 }) {
   const location = useLocation();
 
-  const [kitCount, setKitCount] =
-    useState(getKitCount);
+  const [kitCount, setKitCount] = useState(getKitCount);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [basketPopping, setBasketPopping] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  const [menuOpen, setMenuOpen] =
-    useState(false);
-
-  const [basketPopping, setBasketPopping] =
-    useState(false);
-
-  const animationTimer =
-    useRef(null);
-
-  /*
-   * ---------------------------------------------------------
-   * LIVE KIT UPDATES
-   * ---------------------------------------------------------
-   */
+  const animationTimer = useRef(null);
 
   useEffect(() => {
     const handleKitUpdate = (event) => {
       setKitCount(getKitCount());
-
-      /*
-       * Only pop when a product is ADDED.
-       */
 
       if (
         showFloatingBasket &&
@@ -69,15 +55,12 @@ export default function EunoiaNav({
           setBasketPopping(true);
 
           if (animationTimer.current) {
-            clearTimeout(
-              animationTimer.current
-            );
+            clearTimeout(animationTimer.current);
           }
 
-          animationTimer.current =
-            setTimeout(() => {
-              setBasketPopping(false);
-            }, 700);
+          animationTimer.current = setTimeout(() => {
+            setBasketPopping(false);
+          }, 700);
         });
       }
     };
@@ -110,9 +93,7 @@ export default function EunoiaNav({
       );
 
       if (animationTimer.current) {
-        clearTimeout(
-          animationTimer.current
-        );
+        clearTimeout(animationTimer.current);
       }
     };
   }, [
@@ -120,13 +101,41 @@ export default function EunoiaNav({
     location.pathname,
   ]);
 
-  /*
-   * Close mobile menu after navigation.
-   */
-
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
+
+    try {
+      const { error } =
+        await supabase.auth.signOut();
+
+      if (error) {
+        console.error(
+          "Logout error:",
+          error
+        );
+
+        setLoggingOut(false);
+        return;
+      }
+
+      // Make sure the user cannot remain
+      // on a protected page after logout.
+      window.location.href = "/login";
+    } catch (error) {
+      console.error(
+        "Unexpected logout error:",
+        error
+      );
+
+      setLoggingOut(false);
+    }
+  };
 
   const navLinks = [
     {
@@ -157,10 +166,6 @@ export default function EunoiaNav({
 
   return (
     <>
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
-
       <header
         className={`
           ${
@@ -177,7 +182,6 @@ export default function EunoiaNav({
           ${textColor}
         `}
       >
-
         {overlay && (
           <div
             className="
@@ -185,7 +189,7 @@ export default function EunoiaNav({
               absolute
               inset-x-0
               top-0
-              h-36
+              h-32
               bg-gradient-to-b
               from-black/55
               via-black/20
@@ -207,9 +211,7 @@ export default function EunoiaNav({
             md:px-10
           "
         >
-
           {/* LOGO */}
-
           <Link
             to="/"
             className="
@@ -223,9 +225,7 @@ export default function EunoiaNav({
             EUNOIA
           </Link>
 
-
-          {/* DESKTOP NAV */}
-
+          {/* DESKTOP NAVIGATION */}
           <nav
             className="
               hidden
@@ -235,7 +235,6 @@ export default function EunoiaNav({
               lg:gap-8
             "
           >
-
             {navLinks.map((link) => {
               const active =
                 location.pathname ===
@@ -265,22 +264,18 @@ export default function EunoiaNav({
                 </Link>
               );
             })}
-
           </nav>
 
-
           {/* RIGHT SIDE */}
-
           <div
             className="
               flex
               items-center
-              gap-3
+              gap-2
+              md:gap-3
             "
           >
-
-            {/* NORMAL MY KIT */}
-
+            {/* MY KIT */}
             <Link
               to="/kit"
               className="
@@ -290,12 +285,16 @@ export default function EunoiaNav({
                 items-center
                 gap-2
                 border
-                border-black/15
+                border-white/40
                 px-3
-                text-[#111]
+                text-white
+                transition
+                duration-300
+                hover:bg-white
+                hover:text-[#111111]
+                md:px-4
               "
             >
-
               <ShoppingBag
                 size={17}
                 strokeWidth={1.6}
@@ -322,21 +321,55 @@ export default function EunoiaNav({
                   items-center
                   justify-center
                   rounded-full
-                  bg-[#111]
+                  bg-white
                   px-1
                   text-[9px]
                   font-bold
-                  text-white
+                  text-[#111111]
                 "
               >
                 {kitCount}
               </span>
-
             </Link>
 
+            {/* LOG OUT */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="
+                hidden
+                h-10
+                items-center
+                gap-2
+                border
+                border-white/40
+                px-4
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[0.15em]
+                text-white
+                transition
+                duration-300
+                hover:bg-white
+                hover:text-[#111111]
+                disabled:cursor-wait
+                disabled:opacity-50
+                md:flex
+              "
+            >
+              <LogOut
+                size={16}
+                strokeWidth={1.6}
+              />
 
-            {/* MOBILE MENU */}
+              {loggingOut
+                ? "Logging Out..."
+                : "Log Out"}
+            </button>
 
+            {/* MOBILE MENU BUTTON */}
             <button
               type="button"
               onClick={() =>
@@ -354,35 +387,29 @@ export default function EunoiaNav({
               "
               aria-label="Menu"
             >
-
               {menuOpen ? (
                 <X size={21} />
               ) : (
                 <Menu size={21} />
               )}
-
             </button>
-
           </div>
-
         </div>
 
-
-        {/* MOBILE NAV */}
-
+        {/* MOBILE MENU */}
         {menuOpen && (
           <div
             className="
               relative
               border-t
-              border-black/10
+              border-white/15
               bg-[#f7f5f2]
               px-6
               py-5
+              text-[#111111]
               md:hidden
             "
           >
-
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -402,23 +429,42 @@ export default function EunoiaNav({
               </Link>
             ))}
 
+            {/* MOBILE LOGOUT */}
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="
+                flex
+                w-full
+                items-center
+                gap-3
+                border-b
+                border-black/10
+                py-4
+                text-left
+                text-xs
+                font-semibold
+                uppercase
+                tracking-[0.2em]
+                text-[#111111]
+                disabled:opacity-50
+              "
+            >
+              <LogOut
+                size={17}
+                strokeWidth={1.6}
+              />
+
+              {loggingOut
+                ? "Logging Out..."
+                : "Log Out"}
+            </button>
           </div>
         )}
-
       </header>
 
-
-      {/* =====================================================
-          FLOATING BASKET
-
-          THIS APPEARS ONLY WHEN:
-
-          <EunoiaNav showFloatingBasket={true} />
-
-          Results = TRUE
-          KitBuilder = FALSE
-      ===================================================== */}
-
+      {/* FLOATING KIT BASKET */}
       {showFloatingBasket && (
         <Link
           to="/kit"
@@ -449,9 +495,6 @@ export default function EunoiaNav({
           `}
           aria-label="Open my kit"
         >
-
-          {/* expanding ring */}
-
           <span
             className="
               floating-basket-ring
@@ -460,9 +503,6 @@ export default function EunoiaNav({
               rounded-full
             "
           />
-
-
-          {/* icon */}
 
           <span
             className="
@@ -473,16 +513,11 @@ export default function EunoiaNav({
               justify-center
             "
           >
-
             <ShoppingBag
               size={23}
               strokeWidth={1.6}
             />
-
           </span>
-
-
-          {/* count */}
 
           <span
             className={`
@@ -514,10 +549,8 @@ export default function EunoiaNav({
           >
             {kitCount}
           </span>
-
         </Link>
       )}
-
     </>
   );
 }
