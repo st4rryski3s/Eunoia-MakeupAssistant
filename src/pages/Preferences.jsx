@@ -7,6 +7,9 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { supabase } from "../lib/supabase";
+import { savePreferences } from "../services/supabaseData";
+
 const skinTypes = [
   "Oily",
   "Dry",
@@ -86,7 +89,7 @@ export default function Preferences() {
     });
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!skinType || !look || !budget) {
       return;
     }
@@ -103,12 +106,36 @@ export default function Preferences() {
       brands: selectedBrands,
     };
 
+    // Keep Person 1's existing localStorage behavior
     localStorage.setItem(
       "aura-preferences",
       JSON.stringify(preferences)
     );
 
-    navigate("/results");
+    try {
+      // Get the currently logged-in Supabase user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        console.error("No logged-in user found.");
+        return;
+      }
+
+      // Save preferences to Supabase
+      await savePreferences(user.id, {
+        skinType,
+        preferredLook: look,
+        budgetRange: budget,
+        preferredBrands: selectedBrands,
+      });
+
+      // Continue to the existing Results page
+      navigate("/results");
+    } catch (error) {
+      console.error("Failed to save preferences:", error);
+    }
   };
 
   const canContinue =
