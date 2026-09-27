@@ -1248,6 +1248,7 @@ export default function Home() {
                 gap-y-7
                 sm:grid-cols-3
                 md:grid-cols-5
+                justify-items-center
               "
             >
 

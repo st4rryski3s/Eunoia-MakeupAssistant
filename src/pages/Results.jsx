@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -11,6 +11,11 @@ import {
 
 import { getRecommendations } from "../recommend";
 import productImages from "../productImages";
+import { supabase } from "../lib/supabase";
+import {
+  getPreferences,
+  getLatestSkinAnalysis,
+} from "../services/supabaseData";
 
 import EunoiaNav from "../components/EunoiaNav";
 
@@ -120,130 +125,210 @@ export default function Results() {
 
   /*
    * ---------------------------------------------------------
-   * USER PREFERENCES
+   * REAL USER DATA
    * ---------------------------------------------------------
+   *
+   * Results now loads the actual skin analysis and
+   * preferences saved during the Scan + Preferences steps.
    */
 
-  const savedPreferences = useMemo(() => {
-    try {
-      const saved =
-        localStorage.getItem(
-          "aura-preferences"
+  const [savedPreferences, setSavedPreferences] = useState(null);
+  const [skinProfile, setSkinProfile] = useState(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadUserData() {
+      setDataLoading(true);
+      setDataError("");
+
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        if (!user) {
+          throw new Error("No logged-in user found.");
+        }
+
+        const [preferences, skinAnalysis] =
+          await Promise.all([
+            getPreferences(user.id),
+            getLatestSkinAnalysis(user.id),
+          ]);
+
+        if (cancelled) {
+          return;
+        }
+
+        /*
+         * Supabase stores the budget as the same label
+         * selected on the Preferences page.
+         *
+         * The matcher expects a numeric budget.
+         */
+        const budgetMap = {
+          "Under ₹1,000": 1000,
+          "₹1,000–₹2,000": 2000,
+          "₹2,000–₹4,000": 4000,
+          "₹4,000+": 1000000,
+        };
+
+        const normalizedPreferences = {
+          skinType: preferences?.skin_type || "",
+          look: preferences?.preferred_look || "",
+          budget:
+            budgetMap[preferences?.budget_range] ?? 4000,
+          budgetLabel: preferences?.budget_range || "",
+          brands: preferences?.preferred_brands || [],
+        };
+
+        /*
+         * Person 2 stores toneLevel as a number from 1–10.
+         * Person 3's matcher expects a depth string.
+         */
+        const depthMap = {
+          1: "fair",
+          2: "fair",
+          3: "light",
+          4: "light-medium",
+          5: "medium",
+          6: "medium-tan",
+          7: "medium-dark",
+          8: "deep-medium",
+          9: "dark",
+          10: "deep",
+        };
+
+        const toneLevel =
+          skinAnalysis?.analysis_data?.toneLevel ??
+          skinAnalysis?.skin_depth;
+
+        const numericToneLevel = Number(toneLevel);
+
+        const normalizedSkinProfile = {
+          depth:
+            depthMap[numericToneLevel] ||
+            "medium",
+          undertone:
+            (
+              skinAnalysis?.undertone ||
+              skinAnalysis?.analysis_data?.undertone ||
+              "neutral"
+            ).toLowerCase(),
+          tone:
+            skinAnalysis?.skin_tone ||
+            skinAnalysis?.analysis_data?.tone ||
+            "",
+        };
+
+        setSavedPreferences(
+          normalizedPreferences
+        );
+        setSkinProfile(
+          normalizedSkinProfile
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load Results data:",
+          error
         );
 
-      if (!saved) {
-        return {
-          skinType: "combination",
-          look: "natural",
-          budget: 4000,
-          brands: [],
-        };
+        if (!cancelled) {
+          setDataError(
+            "Could not load your personalised analysis. Please try scanning your face again."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setDataLoading(false);
+        }
       }
-
-      return JSON.parse(saved);
-    } catch {
-      return {
-        skinType: "combination",
-        look: "natural",
-        budget: 4000,
-        brands: [],
-      };
     }
+
+    loadUserData();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const baseUser = useMemo(() => {
+    if (!skinProfile || !savedPreferences) {
+      return null;
+    }
 
-  /*
-   * ---------------------------------------------------------
-   * TEMPORARY SKIN PROFILE
-   *
-   * Person 2 can later replace this with
-   * the actual MediaPipe result.
-   * ---------------------------------------------------------
-   */
-
-  const skinProfile = {
-    depth: "medium",
-    undertone: "warm",
-  };
-
-
-  const baseUser = {
-    depth: skinProfile.depth,
-    undertone: skinProfile.undertone,
-    budget: savedPreferences.budget,
-  };
-
+    return {
+      depth: skinProfile.depth,
+      undertone: skinProfile.undertone,
+      budget: savedPreferences.budget,
+    };
+  }, [skinProfile, savedPreferences]);
 
   /*
    * ---------------------------------------------------------
    * RECOMMENDATIONS
-   *
-   * IMPORTANT:
-   *
-   * getRecommendations already works from the
-   * project's product database.
-   *
-   * We do NOT hardcode a separate brand list here.
    * ---------------------------------------------------------
+   *
+   * Person 3's existing recommendation engine is unchanged.
+   * We now give it the real user depth, undertone and budget.
    */
 
-  const recommendations =
-    useMemo(() => {
-      try {
-        if (
-          activeCategory === "all"
-        ) {
-          const categoriesToFetch = [
-            "foundation",
-            "concealer",
-            "blush",
-            "lipstick",
-            "eyeshadow",
-          ];
+  const recommendations = useMemo(() => {
+    if (!baseUser) {
+      return [];
+    }
 
-          const allProducts =
-            categoriesToFetch.flatMap(
-              (category) => {
-                return getRecommendations({
-                  ...baseUser,
-                  category,
-                });
-              }
-            );
+    try {
+      if (activeCategory === "all") {
+        const categoriesToFetch = [
+          "foundation",
+          "concealer",
+          "blush",
+          "lipstick",
+          "eyeshadow",
+        ];
 
-          /*
-           * Remove duplicates.
-           */
-
-          return Array.from(
-            new Map(
-              allProducts.map(
-                (product) => [
-                  product.id,
-                  product,
-                ]
-              )
-            ).values()
+        const allProducts =
+          categoriesToFetch.flatMap(
+            (category) => {
+              return getRecommendations({
+                ...baseUser,
+                category,
+              });
+            }
           );
-        }
 
-        return getRecommendations({
-          ...baseUser,
-          category: activeCategory,
-        });
-      } catch (error) {
-        console.error(
-          "Recommendation error:",
-          error
+        return Array.from(
+          new Map(
+            allProducts.map((product) => [
+              product.id,
+              product,
+            ])
+          ).values()
         );
-
-        return [];
       }
-    }, [
-      activeCategory,
-      savedPreferences.budget,
-    ]);
 
+      return getRecommendations({
+        ...baseUser,
+        category: activeCategory,
+      });
+    } catch (error) {
+      console.error(
+        "Recommendation error:",
+        error
+      );
+
+      return [];
+    }
+  }, [activeCategory, baseUser]);
 
   /*
    * ---------------------------------------------------------
@@ -337,6 +422,55 @@ export default function Results() {
     );
   };
 
+
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
+        <EunoiaNav showFloatingBasket={true} />
+        <main className="flex min-h-[70vh] items-center justify-center px-6">
+          <div className="text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
+              Eunoia
+            </p>
+            <h1 className="mt-4 text-3xl font-bold">
+              Preparing your matches...
+            </h1>
+            <p className="mt-3 text-sm text-[#2d2522]/60">
+              Loading your skin analysis and preferences.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (dataError || !skinProfile || !savedPreferences) {
+    return (
+      <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
+        <EunoiaNav showFloatingBasket={true} />
+        <main className="flex min-h-[70vh] items-center justify-center px-6">
+          <div className="max-w-md text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
+              Eunoia
+            </p>
+            <h1 className="mt-4 text-3xl font-bold">
+              We couldn't load your matches
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[#2d2522]/60">
+              {dataError ||
+                "Please complete your skin scan and preferences first."}
+            </p>
+            <button
+              onClick={() => navigate("/scan")}
+              className="eunoia-button mt-7 bg-[#111] px-6 py-3 text-sm font-semibold text-white"
+            >
+              Back to scan
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div
