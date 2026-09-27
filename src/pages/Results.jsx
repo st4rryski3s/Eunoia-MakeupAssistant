@@ -63,30 +63,15 @@ const categories = [
   },
 ];
 
+/*
+ * The matcher returns a score out of 100.
+ */
 function getDisplayScore(product) {
-  if (
-    product.category === "foundation" ||
-    product.category === "concealer"
-  ) {
-    return Math.min(
-      100,
-      Math.max(
-        0,
-        Math.round(
-          product.matchScore ?? 0
-        )
-      )
-    );
-  }
-
   return Math.min(
     100,
     Math.max(
       0,
-      Math.round(
-        ((product.matchScore ?? 0) / 70) *
-          100
-      )
+      Math.round(product.matchScore ?? 0)
     )
   );
 }
@@ -100,8 +85,7 @@ function loadKit() {
       return [];
     }
 
-    const parsed =
-      JSON.parse(saved);
+    const parsed = JSON.parse(saved);
 
     return Array.isArray(parsed)
       ? parsed
@@ -114,28 +98,31 @@ function loadKit() {
 export default function Results() {
   const navigate = useNavigate();
 
-  const [
-    activeCategory,
-    setActiveCategory,
-  ] = useState("all");
+  const [activeCategory, setActiveCategory] =
+    useState("all");
 
-  const [kit, setKit] =
-    useState(loadKit);
-
+  const [kit, setKit] = useState(loadKit);
 
   /*
    * ---------------------------------------------------------
    * REAL USER DATA
    * ---------------------------------------------------------
    *
-   * Results now loads the actual skin analysis and
-   * preferences saved during the Scan + Preferences steps.
+   * Results loads the actual skin analysis and preferences
+   * saved during the Scan + Preferences steps.
    */
 
-  const [savedPreferences, setSavedPreferences] = useState(null);
-  const [skinProfile, setSkinProfile] = useState(null);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataError, setDataError] = useState("");
+  const [savedPreferences, setSavedPreferences] =
+    useState(null);
+
+  const [skinProfile, setSkinProfile] =
+    useState(null);
+
+  const [dataLoading, setDataLoading] =
+    useState(true);
+
+  const [dataError, setDataError] =
+    useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -155,7 +142,9 @@ export default function Results() {
         }
 
         if (!user) {
-          throw new Error("No logged-in user found.");
+          throw new Error(
+            "No logged-in user found."
+          );
         }
 
         const [preferences, skinAnalysis] =
@@ -169,31 +158,90 @@ export default function Results() {
         }
 
         /*
-         * Supabase stores the budget as the same label
-         * selected on the Preferences page.
+         * -----------------------------------------------------
+         * BUDGET RANGE
+         * -----------------------------------------------------
          *
-         * The matcher expects a numeric budget.
+         * Supabase stores the selected budget as a label.
+         *
+         * Convert that label into BOTH:
+         *
+         * budgetMin
+         * budgetMax
+         *
+         * so the matcher can enforce the complete
+         * selected range.
          */
+
         const budgetMap = {
-          "Under ₹1,000": 1000,
-          "₹1,000–₹2,000": 2000,
-          "₹2,000–₹4,000": 4000,
-          "₹4,000+": 1000000,
+          "Under ₹1,000": {
+            min: 0,
+            max: 999,
+          },
+
+          "₹1,000–₹2,000": {
+            min: 1000,
+            max: 2000,
+          },
+
+          "₹2,000–₹4,000": {
+            min: 2000,
+            max: 4000,
+          },
+
+          "₹4,000+": {
+            min: 4000,
+            max: Infinity,
+          },
         };
 
+        const selectedBudget =
+          budgetMap[
+            preferences?.budget_range
+          ] || {
+            min: 0,
+            max: Infinity,
+          };
+
+        /*
+         * -----------------------------------------------------
+         * NORMALIZED PREFERENCES
+         * -----------------------------------------------------
+         */
+
         const normalizedPreferences = {
-          skinType: preferences?.skin_type || "",
-          look: preferences?.preferred_look || "",
-          budget:
-            budgetMap[preferences?.budget_range] ?? 4000,
-          budgetLabel: preferences?.budget_range || "",
-          brands: preferences?.preferred_brands || [],
+          skinType:
+            preferences?.skin_type || "",
+
+          look:
+            preferences?.preferred_look || "",
+
+          /*
+           * Exact selected range
+           */
+          budgetMin:
+            selectedBudget.min,
+
+          budgetMax:
+            selectedBudget.max,
+
+          budgetLabel:
+            preferences?.budget_range || "",
+
+          brands:
+            preferences?.preferred_brands || [],
         };
 
         /*
-         * Person 2 stores toneLevel as a number from 1–10.
+         * -----------------------------------------------------
+         * PERSON 2 -> PERSON 3 DEPTH MAPPING
+         * -----------------------------------------------------
+         *
+         * Person 2 stores toneLevel as 1–10.
+         *
          * Person 3's matcher expects a depth string.
          */
+
         const depthMap = {
           1: "fair",
           2: "fair",
@@ -208,21 +256,26 @@ export default function Results() {
         };
 
         const toneLevel =
-          skinAnalysis?.analysis_data?.toneLevel ??
+          skinAnalysis?.analysis_data
+            ?.toneLevel ??
           skinAnalysis?.skin_depth;
 
-        const numericToneLevel = Number(toneLevel);
+        const numericToneLevel =
+          Number(toneLevel);
 
         const normalizedSkinProfile = {
           depth:
-            depthMap[numericToneLevel] ||
-            "medium",
-          undertone:
-            (
-              skinAnalysis?.undertone ||
-              skinAnalysis?.analysis_data?.undertone ||
-              "neutral"
-            ).toLowerCase(),
+            depthMap[
+              numericToneLevel
+            ] || "medium",
+
+          undertone: (
+            skinAnalysis?.undertone ||
+            skinAnalysis?.analysis_data
+              ?.undertone ||
+            "neutral"
+          ).toLowerCase(),
+
           tone:
             skinAnalysis?.skin_tone ||
             skinAnalysis?.analysis_data?.tone ||
@@ -232,6 +285,7 @@ export default function Results() {
         setSavedPreferences(
           normalizedPreferences
         );
+
         setSkinProfile(
           normalizedSkinProfile
         );
@@ -260,25 +314,74 @@ export default function Results() {
     };
   }, []);
 
+  /*
+   * ---------------------------------------------------------
+   * USER PROFILE FOR MATCHER
+   * ---------------------------------------------------------
+   *
+   * All relevant user information is passed into
+   * the recommendation engine.
+   *
+   * 1. depth
+   * 2. undertone
+   * 3. skin type
+   * 4. preferred look
+   * 5. preferred brands
+   * 6. budgetMin
+   * 7. budgetMax
+   */
+
   const baseUser = useMemo(() => {
-    if (!skinProfile || !savedPreferences) {
+    if (
+      !skinProfile ||
+      !savedPreferences
+    ) {
       return null;
     }
 
     return {
-      depth: skinProfile.depth,
-      undertone: skinProfile.undertone,
-      budget: savedPreferences.budget,
+      /*
+       * Skin analysis
+       */
+
+      depth:
+        skinProfile.depth,
+
+      undertone:
+        skinProfile.undertone,
+
+      /*
+       * User preferences
+       */
+
+      skinType:
+        savedPreferences.skinType,
+
+      look:
+        savedPreferences.look,
+
+      brands:
+        savedPreferences.brands,
+
+      /*
+       * Exact budget range
+       */
+
+      budgetMin:
+        savedPreferences.budgetMin,
+
+      budgetMax:
+        savedPreferences.budgetMax,
     };
-  }, [skinProfile, savedPreferences]);
+  }, [
+    skinProfile,
+    savedPreferences,
+  ]);
 
   /*
    * ---------------------------------------------------------
    * RECOMMENDATIONS
    * ---------------------------------------------------------
-   *
-   * Person 3's existing recommendation engine is unchanged.
-   * We now give it the real user depth, undertone and budget.
    */
 
   const recommendations = useMemo(() => {
@@ -306,19 +409,27 @@ export default function Results() {
             }
           );
 
+        /*
+         * Remove duplicates just in case
+         * the same product appears more than once.
+         */
+
         return Array.from(
           new Map(
-            allProducts.map((product) => [
-              product.id,
-              product,
-            ])
+            allProducts.map(
+              (product) => [
+                product.id,
+                product,
+              ]
+            )
           ).values()
         );
       }
 
       return getRecommendations({
         ...baseUser,
-        category: activeCategory,
+        category:
+          activeCategory,
       });
     } catch (error) {
       console.error(
@@ -328,7 +439,10 @@ export default function Results() {
 
       return [];
     }
-  }, [activeCategory, baseUser]);
+  }, [
+    activeCategory,
+    baseUser,
+  ]);
 
   /*
    * ---------------------------------------------------------
@@ -360,7 +474,7 @@ export default function Results() {
       }
 
       /*
-       * Save.
+       * Save kit locally.
        */
 
       localStorage.setItem(
@@ -370,9 +484,6 @@ export default function Results() {
 
       /*
        * Tell EunoiaNav that the kit changed.
-       *
-       * This is what makes the floating basket
-       * update instantly.
        */
 
       window.dispatchEvent(
@@ -380,9 +491,10 @@ export default function Results() {
           "eunoia-kit-updated",
           {
             detail: {
-              action: alreadyAdded
-                ? "remove"
-                : "add",
+              action:
+                alreadyAdded
+                  ? "remove"
+                  : "add",
 
               product,
             },
@@ -394,14 +506,12 @@ export default function Results() {
     });
   };
 
-
   const isInKit = (productId) => {
     return kit.some(
       (item) =>
         item.id === productId
     );
   };
-
 
   /*
    * ---------------------------------------------------------
@@ -422,55 +532,95 @@ export default function Results() {
     );
   };
 
+  /*
+   * ---------------------------------------------------------
+   * LOADING STATE
+   * ---------------------------------------------------------
+   */
 
   if (dataLoading) {
     return (
       <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
-        <EunoiaNav showFloatingBasket={true} />
+        <EunoiaNav
+          showFloatingBasket={true}
+        />
+
         <main className="flex min-h-[70vh] items-center justify-center px-6">
           <div className="text-center">
+
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
               Eunoia
             </p>
+
             <h1 className="mt-4 text-3xl font-bold">
               Preparing your matches...
             </h1>
+
             <p className="mt-3 text-sm text-[#2d2522]/60">
               Loading your skin analysis and preferences.
             </p>
+
           </div>
         </main>
       </div>
     );
   }
 
-  if (dataError || !skinProfile || !savedPreferences) {
+  /*
+   * ---------------------------------------------------------
+   * ERROR STATE
+   * ---------------------------------------------------------
+   */
+
+  if (
+    dataError ||
+    !skinProfile ||
+    !savedPreferences
+  ) {
     return (
       <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
-        <EunoiaNav showFloatingBasket={true} />
+
+        <EunoiaNav
+          showFloatingBasket={true}
+        />
+
         <main className="flex min-h-[70vh] items-center justify-center px-6">
           <div className="max-w-md text-center">
+
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
               Eunoia
             </p>
+
             <h1 className="mt-4 text-3xl font-bold">
               We couldn't load your matches
             </h1>
+
             <p className="mt-3 text-sm leading-6 text-[#2d2522]/60">
               {dataError ||
                 "Please complete your skin scan and preferences first."}
             </p>
+
             <button
-              onClick={() => navigate("/scan")}
+              onClick={() =>
+                navigate("/scan")
+              }
               className="eunoia-button mt-7 bg-[#111] px-6 py-3 text-sm font-semibold text-white"
             >
               Back to scan
             </button>
+
           </div>
         </main>
+
       </div>
     );
   }
+
+  /*
+   * ---------------------------------------------------------
+   * MAIN RESULTS PAGE
+   * ---------------------------------------------------------
+   */
 
   return (
     <div
@@ -488,7 +638,6 @@ export default function Results() {
       <EunoiaNav
         showFloatingBasket={true}
       />
-
 
       {/* =====================================================
           PAGE INTRO
@@ -529,7 +678,6 @@ export default function Results() {
             Back to preferences
           </button>
 
-
           <div
             className="
               grid
@@ -554,13 +702,10 @@ export default function Results() {
                   text-[#8b6f61]
                 "
               >
-
                 <Sparkles size={14} />
 
                 Your personalised edit
-
               </div>
-
 
               <h1
                 className="
@@ -578,7 +723,6 @@ export default function Results() {
               </h1>
 
             </div>
-
 
             <div
               className="
@@ -598,10 +742,10 @@ export default function Results() {
                 Based on your skin analysis
                 and preferences, EUNOIA has
                 selected products that match
-                your complexion, undertone
-                and budget.
+                your complexion, undertone,
+                skin type, preferred look,
+                preferred brands and budget.
               </p>
-
 
               <div
                 className="
@@ -626,7 +770,6 @@ export default function Results() {
                   {skinProfile.depth} depth
                 </span>
 
-
                 <span
                   className="
                     border
@@ -638,11 +781,24 @@ export default function Results() {
                     tracking-[0.12em]
                   "
                 >
-                  {skinProfile.undertone}
-                  {" "}
-                  undertone
+                  {skinProfile.undertone} undertone
                 </span>
 
+                {savedPreferences.skinType && (
+                  <span
+                    className="
+                      border
+                      border-[#2d2522]/15
+                      px-3
+                      py-2
+                      text-xs
+                      uppercase
+                      tracking-[0.12em]
+                    "
+                  >
+                    {savedPreferences.skinType}
+                  </span>
+                )}
 
                 {savedPreferences.look && (
                   <span
@@ -668,7 +824,6 @@ export default function Results() {
 
         </section>
 
-
         {/* ===================================================
             CATEGORY NAV
         =================================================== */}
@@ -693,7 +848,6 @@ export default function Results() {
 
             {categories.map(
               (category) => {
-
                 const active =
                   activeCategory ===
                   category.id;
@@ -733,7 +887,6 @@ export default function Results() {
 
         </section>
 
-
         {/* ===================================================
             RESULTS
         =================================================== */}
@@ -771,11 +924,8 @@ export default function Results() {
                   text-[#8b6f61]
                 "
               >
-                {recommendations.length}
-                {" "}
-                products
+                {recommendations.length} products
               </p>
-
 
               <h2
                 className="
@@ -789,7 +939,6 @@ export default function Results() {
               </h2>
 
             </div>
-
 
             <button
               onClick={() =>
@@ -814,14 +963,12 @@ export default function Results() {
 
           </div>
 
-
           {/* =================================================
               NO RESULTS
           ================================================= */}
 
           {recommendations.length ===
           0 ? (
-
             <div
               className="
                 border
@@ -842,7 +989,6 @@ export default function Results() {
                 No matches found
               </h3>
 
-
               <p
                 className="
                   mx-auto
@@ -856,7 +1002,6 @@ export default function Results() {
                 or changing your preferences
                 to see more recommendations.
               </p>
-
 
               <button
                 onClick={() =>
@@ -877,9 +1022,7 @@ export default function Results() {
               </button>
 
             </div>
-
           ) : (
-
             <div
               className="
                 grid
@@ -893,11 +1036,15 @@ export default function Results() {
 
               {recommendations.map(
                 (product) => {
-
                   const added =
                     isInKit(
                       product.id
                     );
+
+                  /*
+                   * Matcher score is already
+                   * out of 100.
+                   */
 
                   const score =
                     getDisplayScore(
@@ -932,9 +1079,7 @@ export default function Results() {
 
                         <img
                           src={image}
-                          alt={
-                            product.name
-                          }
+                          alt={product.name}
                           className="
                             h-full
                             w-full
@@ -943,7 +1088,6 @@ export default function Results() {
                           onError={(
                             event
                           ) => {
-
                             /*
                              * Don't keep repeatedly
                              * triggering the error.
@@ -959,7 +1103,6 @@ export default function Results() {
                               categoryImages.foundation;
                           }}
                         />
-
 
                         {/* MATCH */}
 
@@ -993,7 +1136,6 @@ export default function Results() {
 
                         </div>
 
-
                         {/* CATEGORY */}
 
                         <div
@@ -1016,7 +1158,6 @@ export default function Results() {
 
                       </div>
 
-
                       {/* PRODUCT INFORMATION */}
 
                       <div className="pt-5">
@@ -1033,7 +1174,6 @@ export default function Results() {
                           {product.brand}
                         </div>
 
-
                         <h3
                           className="
                             text-lg
@@ -1043,7 +1183,6 @@ export default function Results() {
                         >
                           {product.name}
                         </h3>
-
 
                         {product.shade && (
                           <p
@@ -1058,7 +1197,6 @@ export default function Results() {
                           </p>
                         )}
 
-
                         {product.matchReason && (
                           <p
                             className="
@@ -1071,7 +1209,6 @@ export default function Results() {
                             {product.matchReason}
                           </p>
                         )}
-
 
                         {/* PRICE + BUTTON */}
 
@@ -1101,7 +1238,6 @@ export default function Results() {
                             )}
                           </span>
 
-
                           <button
                             onClick={() =>
                               toggleKit(
@@ -1125,7 +1261,6 @@ export default function Results() {
                                     border-[#111]
                                     bg-[#111]
                                     text-white
-
                                     hover:bg-white
                                     hover:text-[#111]
                                   `
@@ -1133,7 +1268,6 @@ export default function Results() {
                                     border-[#111]
                                     bg-transparent
                                     text-[#111]
-
                                     hover:bg-[#111]
                                     hover:text-white
                                   `
@@ -1171,11 +1305,9 @@ export default function Results() {
               )}
 
             </div>
-
           )}
 
         </section>
-
 
         {/* ===================================================
             KIT CTA
@@ -1221,7 +1353,6 @@ export default function Results() {
                 Your collection
               </p>
 
-
               <h2
                 className="
                   text-3xl
@@ -1232,7 +1363,6 @@ export default function Results() {
               >
                 BUILD YOUR EUNOIA KIT.
               </h2>
-
 
               <p
                 className="
@@ -1250,7 +1380,6 @@ export default function Results() {
               </p>
 
             </div>
-
 
             <button
               onClick={() =>
@@ -1280,7 +1409,6 @@ export default function Results() {
         </section>
 
       </main>
-
 
       {/* =====================================================
           FOOTER
@@ -1321,7 +1449,6 @@ export default function Results() {
           >
             EUNOIA
           </span>
-
 
           <span>
             Personalised beauty, powered by

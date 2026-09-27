@@ -22,7 +22,7 @@ export default function About() {
             onClick={() => navigate("/")}
             className="text-2xl font-light tracking-[0.35em]"
           >
-            AURA
+            EUNOIA
           </button>
 
           <nav className="hidden items-center gap-8 text-xs font-medium uppercase tracking-[0.15em] md:flex">
@@ -78,7 +78,7 @@ export default function About() {
           </button>
 
           <p className="text-xs font-medium uppercase tracking-[0.35em] text-white/50">
-            About AURA
+            About EUNOIA
           </p>
 
           <h1 className="mt-7 max-w-5xl text-6xl font-semibold uppercase leading-[0.9] tracking-[-0.05em] md:text-8xl">
@@ -90,7 +90,7 @@ export default function About() {
           </h1>
 
           <p className="mt-10 max-w-2xl text-base leading-7 text-white/65 md:text-lg">
-            AURA is an AI-powered personalized beauty assistant designed
+            EUNOIA is an AI-powered personalized beauty assistant designed
             to make finding makeup that works for you simpler, faster
             and more personal.
           </p>
@@ -100,7 +100,7 @@ export default function About() {
       </section>
 
 
-      {/* WHAT IS AURA */}
+      {/* WHAT IS EUNOIA */}
       <section className="px-6 py-24 md:px-12 md:py-32">
 
         <div className="mx-auto max-w-7xl">
@@ -132,7 +132,7 @@ export default function About() {
               </p>
 
               <p className="mt-7 text-base leading-7 text-[#77716b]">
-                AURA brings those decisions into one personalized
+                EUNOIA brings those decisions into one personalized
                 experience. It combines facial analysis, skin profiling,
                 preferences and product information to help you discover
                 products suited to you.
@@ -196,7 +196,7 @@ export default function About() {
               </h3>
 
               <p className="mt-4 text-sm leading-6 text-[#6c625b]">
-                Take a quick photo in good lighting. AURA analyses
+                Take a quick photo in good lighting. EUNOIA analyzes
                 your facial and skin characteristics to create your
                 starting profile.
               </p>
@@ -254,7 +254,7 @@ export default function About() {
               </h3>
 
               <p className="mt-4 text-sm leading-6 text-[#6c625b]">
-                AURA compares your profile with products across
+                EUNOIA compares your profile with products across
                 brands and ranks the shades and products that best
                 fit your profile.
               </p>
@@ -368,7 +368,7 @@ export default function About() {
                   </h3>
 
                   <p className="mt-3 max-w-xl text-sm leading-6 text-[#6c6660]">
-                    AURA is designed to work across different skin
+                    EUNOIA is designed to work across different skin
                     depths, undertones, preferences and budgets.
                   </p>
 
@@ -404,7 +404,7 @@ export default function About() {
             onClick={() => navigate("/scan")}
             className="mx-auto mt-9 flex items-center gap-4 rounded-full bg-black px-8 py-4 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#292929]"
           >
-            Start your Aura scan
+            Start your Eunoia scan
             <ArrowRight size={18} />
           </button>
 
@@ -422,7 +422,7 @@ export default function About() {
             onClick={() => navigate("/")}
             className="text-xl font-light tracking-[0.35em]"
           >
-            AURA
+            EUNOIA
           </button>
 
           <p className="text-xs text-white/50">
@@ -430,7 +430,7 @@ export default function About() {
           </p>
 
           <p className="text-xs text-white/40">
-            © 2026 Aura
+            © 2026 Eunoia
           </p>
 
         </div>

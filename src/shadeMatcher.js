@@ -2,7 +2,7 @@ import products from "./data/products";
 
 /*
 =========================================================
-AURA CROSS-BRAND SHADE MATCHER
+EUNOIA CROSS-BRAND SHADE MATCHER
 =========================================================
 
 Priority:

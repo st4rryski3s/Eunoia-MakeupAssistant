@@ -40,22 +40,45 @@ const looks = [
   },
 ];
 
+/*
+ * Budget ranges
+ *
+ * min = minimum allowed product price
+ * max = maximum allowed product price
+ *
+ * Under ₹1,000:
+ * ₹0 - ₹999
+ *
+ * ₹1,000–₹2,000:
+ * ₹1,000 - ₹2,000
+ *
+ * ₹2,000–₹4,000:
+ * ₹2,000 - ₹4,000
+ *
+ * ₹4,000+:
+ * ₹4,000 and above
+ */
+
 const budgets = [
   {
     label: "Under ₹1,000",
-    value: 1000,
+    min: 0,
+    max: 999,
   },
   {
     label: "₹1,000–₹2,000",
-    value: 2000,
+    min: 1000,
+    max: 2000,
   },
   {
     label: "₹2,000–₹4,000",
-    value: 4000,
+    min: 2000,
+    max: 4000,
   },
   {
     label: "₹4,000+",
-    value: 999999,
+    min: 4000,
+    max: Infinity,
   },
 ];
 
@@ -82,7 +105,9 @@ export default function Preferences() {
   const toggleBrand = (brand) => {
     setSelectedBrands((current) => {
       if (current.includes(brand)) {
-        return current.filter((item) => item !== brand);
+        return current.filter(
+          (item) => item !== brand
+        );
       }
 
       return [...current, brand];
@@ -98,32 +123,63 @@ export default function Preferences() {
       (item) => item.label === budget
     );
 
+    /*
+     * Store BOTH budget limits.
+     *
+     * The matcher will use:
+     *
+     * budgetMin
+     * budgetMax
+     *
+     * instead of treating the selected value
+     * as only a maximum.
+     */
     const preferences = {
       skinType,
       look,
-      budget: selectedBudget?.value ?? 4000,
+
+      budgetMin:
+        selectedBudget?.min ?? 0,
+
+      budgetMax:
+        selectedBudget?.max ?? Infinity,
+
       budgetLabel: budget,
+
       brands: selectedBrands,
     };
 
-    // Keep Person 1's existing localStorage behavior
+    /*
+     * Keep Person 1's existing localStorage behavior.
+     */
     localStorage.setItem(
       "aura-preferences",
       JSON.stringify(preferences)
     );
 
     try {
-      // Get the currently logged-in Supabase user
+      /*
+       * Get the currently logged-in Supabase user.
+       */
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        console.error("No logged-in user found.");
+        console.error(
+          "No logged-in user found."
+        );
         return;
       }
 
-      // Save preferences to Supabase
+      /*
+       * Supabase currently stores the selected
+       * budget RANGE LABEL.
+       *
+       * We keep this unchanged because the
+       * preferences table already uses
+       * budget_range.
+       */
       await savePreferences(user.id, {
         skinType,
         preferredLook: look,
@@ -131,10 +187,15 @@ export default function Preferences() {
         preferredBrands: selectedBrands,
       });
 
-      // Continue to the existing Results page
+      /*
+       * Continue to the existing Results page.
+       */
       navigate("/results");
     } catch (error) {
-      console.error("Failed to save preferences:", error);
+      console.error(
+        "Failed to save preferences:",
+        error
+      );
     }
   };
 
@@ -162,7 +223,7 @@ export default function Preferences() {
             onClick={() => navigate("/")}
             className="text-2xl font-black tracking-[-0.08em]"
           >
-            AURA
+            EUNOIA
           </button>
 
           <div className="flex items-center gap-4">
@@ -236,7 +297,7 @@ export default function Preferences() {
           </h1>
 
           <p className="mt-7 max-w-xl text-base leading-7 text-black/55">
-            Your answers help AURA narrow down products that
+            Your answers help Eunoia narrow down products that
             fit your preferences, budget and makeup style.
           </p>
 
@@ -262,12 +323,15 @@ export default function Preferences() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
 
             {skinTypes.map((type) => {
-              const selected = skinType === type;
+              const selected =
+                skinType === type;
 
               return (
                 <button
                   key={type}
-                  onClick={() => setSkinType(type)}
+                  onClick={() =>
+                    setSkinType(type)
+                  }
                   className={`border px-5 py-6 text-left transition ${
                     selected
                       ? "border-[#111111] bg-[#111111] text-white"
@@ -307,12 +371,15 @@ export default function Preferences() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
 
             {looks.map((item) => {
-              const selected = look === item.name;
+              const selected =
+                look === item.name;
 
               return (
                 <button
                   key={item.name}
-                  onClick={() => setLook(item.name)}
+                  onClick={() =>
+                    setLook(item.name)
+                  }
                   className={`group relative overflow-hidden border text-left ${
                     selected
                       ? "border-[#111111]"
@@ -368,12 +435,15 @@ export default function Preferences() {
           <div className="grid gap-3 md:grid-cols-4">
 
             {budgets.map((item) => {
-              const selected = budget === item.label;
+              const selected =
+                budget === item.label;
 
               return (
                 <button
                   key={item.label}
-                  onClick={() => setBudget(item.label)}
+                  onClick={() =>
+                    setBudget(item.label)
+                  }
                   className={`border px-5 py-6 text-left transition ${
                     selected
                       ? "border-[#111111] bg-[#111111] text-white"
@@ -406,7 +476,7 @@ export default function Preferences() {
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-black/50">
               Optional. Select as many as you want. Leave this
-              empty if you want AURA to consider everything.
+              empty if you want Eunoia to consider everything.
             </p>
 
           </div>
@@ -420,7 +490,9 @@ export default function Preferences() {
               return (
                 <button
                   key={brand}
-                  onClick={() => toggleBrand(brand)}
+                  onClick={() =>
+                    toggleBrand(brand)
+                  }
                   className={`border px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
                     selected
                       ? "border-[#111111] bg-[#111111] text-white"
@@ -472,7 +544,7 @@ export default function Preferences() {
         <div className="mx-auto flex max-w-[1500px] items-center justify-between px-6 py-8 md:px-10">
 
           <p className="text-xl font-black tracking-[-0.08em]">
-            AURA
+            EUNOIA
           </p>
 
           <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-black/30">
