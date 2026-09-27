@@ -69,6 +69,7 @@ export default function Scan() {
     }
 
     const video = videoRef.current;
+
     video.srcObject = streamRef.current;
 
     video.play().catch((videoError) => {
@@ -126,8 +127,7 @@ export default function Scan() {
 
       streamRef.current = stream;
 
-    setCameraOpen(true);
-
+      setCameraOpen(true);
     } catch (cameraError) {
       console.error(
         "Camera access failed:",
@@ -344,7 +344,7 @@ export default function Scan() {
   };
 
   /*
-   * Run Person 2's existing skin analysis.
+   * Run Person 2's skin analysis.
    */
   const handleAnalyze = async () => {
     if (!imageElement) {
@@ -361,6 +361,14 @@ export default function Scan() {
     try {
       /*
        * Run P2 analysis.
+       *
+       * buildSkinProfile performs:
+       *
+       * 1. Lighting check
+       * 2. Face detection
+       * 3. Face framing check
+       * 4. Skin RGB extraction
+       * 5. Undertone analysis
        */
       const analysis =
         await buildSkinProfile(
@@ -368,19 +376,207 @@ export default function Scan() {
         );
 
       /*
-       * Make sure a face was detected.
+       * ------------------------------------------------
+       * STEP 1 — CHECK LIGHTING
+       * ------------------------------------------------
        */
+
+      if (
+        analysis.lightingAcceptable === false
+      ) {
+        const reason =
+          analysis.lighting?.reason;
+
+        /*
+         * If buildProfile already provides a
+         * user-friendly message, use it.
+         */
+        if (
+          analysis.lighting?.message
+        ) {
+          setError(
+            analysis.lighting.message
+          );
+        }
+
+        /*
+         * Fallback messages in case the
+         * lighting object does not contain
+         * a message.
+         */
+        else if (
+          reason === "too-dark"
+        ) {
+          setError(
+            "The lighting is too dark. Please move to a brighter, well-lit area and try again."
+          );
+        } else if (
+          reason === "too-bright"
+        ) {
+          setError(
+            "The lighting is too bright. Avoid direct or harsh light and try again."
+          );
+        } else if (
+          reason === "overexposed"
+        ) {
+          setError(
+            "The image is overexposed. Please move away from very bright or direct light and try again."
+          );
+        } else if (
+          reason ===
+          "uneven-lighting"
+        ) {
+          setError(
+            "The lighting is uneven. Please face a light source directly and try again."
+          );
+        } else {
+          setError(
+            "The lighting is not suitable for accurate skin analysis. Please try again with soft, even lighting."
+          );
+        }
+
+        return;
+      }
+
+      /*
+       * ------------------------------------------------
+       * STEP 2 — CHECK FACE DETECTION
+       * ------------------------------------------------
+       */
+
       if (!analysis.faceDetected) {
         setError(
-          "No face was detected. Please try again with your face clearly visible."
+          "No face was detected. Please position your entire face inside the guide and try again."
         );
 
         return;
       }
 
       /*
-       * Get logged-in Supabase user.
+       * ------------------------------------------------
+       * STEP 3 — CHECK FACE FRAMING
+       * ------------------------------------------------
+       *
+       * This is the important new part.
+       *
+       * MediaPipe can detect a face even if part
+       * of the face is outside the image.
+       *
+       * buildProfile should therefore return:
+       *
+       * framingAcceptable
+       * framing.reason
        */
+      if (
+        analysis.framingAcceptable === false
+      ) {
+        const reason =
+          analysis.framing?.reason;
+
+        /*
+         * Specific messages depending on where
+         * the face is being cut off.
+         */
+
+        if (
+          reason ===
+          "face-cut-off-left"
+        ) {
+          setError(
+            "Part of your face is outside the left side of the frame. Please move slightly to the right and keep your entire face visible."
+          );
+        } else if (
+          reason ===
+          "face-cut-off-right"
+        ) {
+          setError(
+            "Part of your face is outside the right side of the frame. Please move slightly to the left and keep your entire face visible."
+          );
+        } else if (
+          reason ===
+          "face-cut-off-top"
+        ) {
+          setError(
+            "Part of your face is outside the top of the frame. Please move slightly lower and keep your entire face visible."
+          );
+        } else if (
+          reason ===
+          "face-cut-off-bottom"
+        ) {
+          setError(
+            "Part of your face is outside the bottom of the frame. Please move slightly higher and keep your entire face visible."
+          );
+        } else if (
+          reason ===
+          "face-too-far-left"
+        ) {
+          setError(
+            "Your face is too close to the left edge. Please move toward the centre of the frame."
+          );
+        } else if (
+          reason ===
+          "face-too-far-right"
+        ) {
+          setError(
+            "Your face is too close to the right edge. Please move toward the centre of the frame."
+          );
+        } else if (
+          reason ===
+          "face-too-far-top"
+        ) {
+          setError(
+            "Your face is too close to the top edge. Please move toward the centre of the frame."
+          );
+        } else if (
+          reason ===
+          "face-too-far-bottom"
+        ) {
+          setError(
+            "Your face is too close to the bottom edge. Please move toward the centre of the frame."
+          );
+        } else if (
+          reason ===
+          "face-too-small"
+        ) {
+          setError(
+            "Your face is too far away. Please move closer to the camera while keeping your entire face visible."
+          );
+        } else if (
+          reason ===
+          "face-too-close"
+        ) {
+          setError(
+            "Your face is too close to the camera. Please move back slightly and keep your entire face inside the frame."
+          );
+        } else {
+          setError(
+            "Please position your entire face inside the frame and try again."
+          );
+        }
+
+        return;
+      }
+
+      /*
+       * ------------------------------------------------
+       * STEP 4 — MAKE SURE SKIN ANALYSIS EXISTS
+       * ------------------------------------------------
+       */
+
+      if (!analysis.undertone) {
+        setError(
+          "We could not analyse your skin. Please try another photo."
+        );
+
+        return;
+      }
+
+      /*
+       * ------------------------------------------------
+       * STEP 5 — GET LOGGED-IN SUPABASE USER
+       * ------------------------------------------------
+       */
+
       const {
         data: { user },
         error: userError,
@@ -400,8 +596,11 @@ export default function Scan() {
       }
 
       /*
-       * Save P2 analysis to Supabase.
+       * ------------------------------------------------
+       * STEP 6 — SAVE ANALYSIS TO SUPABASE
+       * ------------------------------------------------
        */
+
       await saveSkinAnalysis(
         user.id,
         {
@@ -421,7 +620,11 @@ export default function Scan() {
           bestShadeRange: null,
 
           /*
-           * Store complete P2 analysis.
+           * Store the complete P2 analysis.
+           *
+           * This contains the RGB information,
+           * undertone details, HSL information,
+           * etc.
            */
           analysisData:
             analysis.undertone,
@@ -429,17 +632,24 @@ export default function Scan() {
       );
 
       /*
-       * Keep the analysis available locally.
+       * ------------------------------------------------
+       * STEP 7 — SAVE LOCALLY
+       * ------------------------------------------------
        */
+
       localStorage.setItem(
         "eunoia-skin-analysis",
         JSON.stringify(analysis)
       );
 
       /*
-       * Continue to Preferences.
+       * ------------------------------------------------
+       * STEP 8 — CONTINUE
+       * ------------------------------------------------
        */
+
       navigate("/preferences");
+
     } catch (analysisError) {
       console.error(
         "Skin analysis failed:",
@@ -784,7 +994,7 @@ export default function Scan() {
           </div>
 
 
-          {/* BOTH PHOTO OPTIONS */}
+          {/* Upload option */}
 
           {!cameraOpen &&
             !selectedImage && (
@@ -851,12 +1061,14 @@ export default function Scan() {
           )}
 
 
-          {/* Error */}
+          {/* Error / analysis feedback */}
 
           {error && (
 
             <div className="mt-5 border border-[#d8b8b8] bg-[#fff7f7] px-5 py-4 text-center text-xs leading-5 text-[#8a4f4f]">
+
               {error}
+
             </div>
 
           )}
