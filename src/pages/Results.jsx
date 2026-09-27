@@ -15,6 +15,9 @@ import { supabase } from "../lib/supabase";
 import {
   getPreferences,
   getLatestSkinAnalysis,
+  getSavedProducts,
+  saveProduct,
+  deleteSavedProduct,
 } from "../services/supabaseData";
 
 import EunoiaNav from "../components/EunoiaNav";
@@ -101,7 +104,7 @@ export default function Results() {
   const [activeCategory, setActiveCategory] =
     useState("all");
 
-  const [kit, setKit] = useState(loadKit);
+  const [kit, setKit] = useState([]);
 
   /*
    * ---------------------------------------------------------
@@ -147,11 +150,26 @@ export default function Results() {
           );
         }
 
-        const [preferences, skinAnalysis] =
+        const [preferences, skinAnalysis, savedProducts] =
           await Promise.all([
             getPreferences(user.id),
             getLatestSkinAnalysis(user.id),
+            getSavedProducts(user.id),
           ]);
+
+        // Supabase is the source of truth for the kit.
+        // Convert saved_products rows back into the product shape
+        // used by the Results page.
+        const savedKit = (savedProducts || []).map((item) => ({
+          id: item.product_id,
+          name: item.product_name,
+          brand: item.brand,
+          category: item.category,
+          shade: item.shade,
+          price: item.price,
+          imageUrl: item.image_url || "",
+          image: item.image_url || "",
+        }));
 
         if (cancelled) {
           return;
@@ -159,55 +177,27 @@ export default function Results() {
 
         /*
          * -----------------------------------------------------
-         * BUDGET RANGE
-         * -----------------------------------------------------
-         *
-         * Supabase stores the selected budget as a label.
-         *
-         * Convert that label into BOTH:
-         *
-         * budgetMin
-         * budgetMax
-         *
-         * so the matcher can enforce the complete
-         * selected range.
-         */
-
-        const budgetMap = {
-          "Under ₹1,000": {
-            min: 0,
-            max: 999,
-          },
-
-          "₹1,000–₹2,000": {
-            min: 1000,
-            max: 2000,
-          },
-
-          "₹2,000–₹4,000": {
-            min: 2000,
-            max: 4000,
-          },
-
-          "₹4,000+": {
-            min: 4000,
-            max: Infinity,
-          },
-        };
-
-        const selectedBudget =
-          budgetMap[
-            preferences?.budget_range
-          ] || {
-            min: 0,
-            max: Infinity,
-          };
-
-        /*
-         * -----------------------------------------------------
          * NORMALIZED PREFERENCES
          * -----------------------------------------------------
+         *
+         * Supabase now stores the exact budget range selected
+         * using the dual-thumb budget slider.
+         *
+         * Example:
+         *
+         * budget_min = 500
+         * budget_max = 2500
+         *
+         * No old budget labels or budget maps are needed.
          */
+
+        const budgetMin = Number(
+          preferences?.budget_min ?? 0
+        );
+
+        const budgetMax = Number(
+          preferences?.budget_max ?? 5000
+        );
 
         const normalizedPreferences = {
           skinType:
@@ -217,16 +207,22 @@ export default function Results() {
             preferences?.preferred_look || "",
 
           /*
-           * Exact selected range
+           * Exact selected budget range
            */
-          budgetMin:
-            selectedBudget.min,
+          budgetMin,
 
-          budgetMax:
-            selectedBudget.max,
+          budgetMax,
 
+          /*
+           * Human-readable version for displaying
+           * the selected range if needed.
+           */
           budgetLabel:
-            preferences?.budget_range || "",
+            `₹${budgetMin.toLocaleString(
+              "en-IN"
+            )} – ₹${budgetMax.toLocaleString(
+              "en-IN"
+            )}`,
 
           brands:
             preferences?.preferred_brands || [],
@@ -288,6 +284,13 @@ export default function Results() {
 
         setSkinProfile(
           normalizedSkinProfile
+        );
+
+        // Load the kit from Supabase, not stale localStorage.
+        setKit(savedKit);
+        localStorage.setItem(
+          "aura-kit",
+          JSON.stringify(savedKit)
         );
       } catch (error) {
         console.error(
@@ -450,60 +453,112 @@ export default function Results() {
    * ---------------------------------------------------------
    */
 
-  const toggleKit = (product) => {
-    setKit((currentKit) => {
-      const alreadyAdded =
-        currentKit.some(
-          (item) =>
-            item.id === product.id
-        );
+  const toggleKit = async (product) => {
+    try {
+      // Get the currently logged-in user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-      let updatedKit;
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        console.error("No logged-in user found.");
+        return;
+      }
+
+      // Check whether this product is already in the kit
+      const alreadyAdded = kit.some(
+        (item) => item.id === product.id
+      );
+
+      // ------------------------------------
+      // REMOVE FROM KIT
+      // ------------------------------------
 
       if (alreadyAdded) {
-        updatedKit =
-          currentKit.filter(
-            (item) =>
-              item.id !== product.id
+        await deleteSavedProduct(
+          user.id,
+          product.id
+        );
+
+        setKit((currentKit) => {
+          const updatedKit = currentKit.filter(
+            (item) => item.id !== product.id
           );
-      } else {
-        updatedKit = [
+
+          // Keep localStorage temporarily in sync
+          localStorage.setItem(
+            "aura-kit",
+            JSON.stringify(updatedKit)
+          );
+
+          return updatedKit;
+        });
+
+        window.dispatchEvent(
+          new CustomEvent("eunoia-kit-updated", {
+            detail: {
+              action: "remove",
+              product,
+            },
+          })
+        );
+
+        return;
+      }
+
+      // ------------------------------------
+      // ADD TO KIT
+      // ------------------------------------
+
+      await saveProduct(user.id, {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        shade: product.shade,
+        price: product.price,
+
+        // Use whichever image field exists
+        imageUrl:
+          product.imageUrl ||
+          product.image ||
+          "",
+      });
+
+      setKit((currentKit) => {
+        const updatedKit = [
           ...currentKit,
           product,
         ];
-      }
 
-      /*
-       * Save kit locally.
-       */
+        // Keep localStorage temporarily in sync
+        localStorage.setItem(
+          "aura-kit",
+          JSON.stringify(updatedKit)
+        );
 
-      localStorage.setItem(
-        "aura-kit",
-        JSON.stringify(updatedKit)
-      );
-
-      /*
-       * Tell EunoiaNav that the kit changed.
-       */
+        return updatedKit;
+      });
 
       window.dispatchEvent(
-        new CustomEvent(
-          "eunoia-kit-updated",
-          {
-            detail: {
-              action:
-                alreadyAdded
-                  ? "remove"
-                  : "add",
-
-              product,
-            },
-          }
-        )
+        new CustomEvent("eunoia-kit-updated", {
+          detail: {
+            action: "add",
+            product,
+          },
+        })
       );
-
-      return updatedKit;
-    });
+    } catch (error) {
+      console.error(
+        "Kit update failed:",
+        error
+      );
+    }
   };
 
   const isInKit = (productId) => {

@@ -71,15 +71,15 @@ function normalizeArray(value) {
  */
 
 function arrayIncludesNormalized(array, value) {
-  return normalizeArray(array).includes(normalize(value));
+  return normalizeArray(array).includes(
+    normalize(value)
+  );
 }
 
 /*
  * ---------------------------------------------------------
  * DEPTH MATCHING
  * ---------------------------------------------------------
- *
- * Much stricter than the old matcher.
  *
  * Exact:
  *   100
@@ -103,7 +103,10 @@ function arrayIncludesNormalized(array, value) {
  * much more strongly.
  */
 
-function getDepthSimilarity(userDepth, productDepth) {
+function getDepthSimilarity(
+  userDepth,
+  productDepth
+) {
   const user = normalize(userDepth);
   const product = normalize(productDepth);
 
@@ -111,14 +114,22 @@ function getDepthSimilarity(userDepth, productDepth) {
     return 0;
   }
 
-  const userIndex = depthOrder.indexOf(user);
-  const productIndex = depthOrder.indexOf(product);
+  const userIndex =
+    depthOrder.indexOf(user);
 
-  if (userIndex === -1 || productIndex === -1) {
+  const productIndex =
+    depthOrder.indexOf(product);
+
+  if (
+    userIndex === -1 ||
+    productIndex === -1
+  ) {
     return 0;
   }
 
-  const difference = Math.abs(userIndex - productIndex);
+  const difference = Math.abs(
+    userIndex - productIndex
+  );
 
   if (difference === 0) {
     return 100;
@@ -158,7 +169,10 @@ function getDepthSimilarity(userDepth, productDepth) {
  * the same strength as an exact olive match.
  */
 
-function getUndertoneSimilarity(userUndertone, productUndertone) {
+function getUndertoneSimilarity(
+  userUndertone,
+  productUndertone
+) {
   const user = normalize(userUndertone);
   const product = normalize(productUndertone);
 
@@ -193,9 +207,12 @@ function getUndertoneSimilarity(userUndertone, productUndertone) {
   /*
    * Warm and olive can overlap.
    */
+
   if (
-    (user === "olive" && product === "warm") ||
-    (user === "warm" && product === "olive")
+    (user === "olive" &&
+      product === "warm") ||
+    (user === "warm" &&
+      product === "olive")
   ) {
     return 70;
   }
@@ -204,9 +221,12 @@ function getUndertoneSimilarity(userUndertone, productUndertone) {
    * Cool and olive are generally less directly compatible
    * than warm and olive.
    */
+
   if (
-    (user === "olive" && product === "cool") ||
-    (user === "cool" && product === "olive")
+    (user === "olive" &&
+      product === "cool") ||
+    (user === "cool" &&
+      product === "olive")
   ) {
     return 35;
   }
@@ -214,6 +234,7 @@ function getUndertoneSimilarity(userUndertone, productUndertone) {
   /*
    * Warm vs cool is a strong mismatch.
    */
+
   return 10;
 }
 
@@ -248,9 +269,15 @@ function getUndertoneDetailTokens(value) {
     .filter(Boolean);
 }
 
-function getUndertoneDetailSimilarity(user, product) {
-  const userDetail = normalize(user.undertoneDetail);
-  const productDetail = normalize(product.undertoneDetail);
+function getUndertoneDetailSimilarity(
+  user,
+  product
+) {
+  const userDetail =
+    normalize(user.undertoneDetail);
+
+  const productDetail =
+    normalize(product.undertoneDetail);
 
   if (!userDetail || !productDetail) {
     return null;
@@ -260,8 +287,15 @@ function getUndertoneDetailSimilarity(user, product) {
     return 100;
   }
 
-  const userTokens = getUndertoneDetailTokens(userDetail);
-  const productTokens = getUndertoneDetailTokens(productDetail);
+  const userTokens =
+    getUndertoneDetailTokens(
+      userDetail
+    );
+
+  const productTokens =
+    getUndertoneDetailTokens(
+      productDetail
+    );
 
   if (
     userTokens.length === 0 ||
@@ -270,12 +304,13 @@ function getUndertoneDetailSimilarity(user, product) {
     return null;
   }
 
-  const matches = userTokens.filter((token) =>
-    productTokens.some(
-      (productToken) =>
-        productToken.includes(token) ||
-        token.includes(productToken)
-    )
+  const matches = userTokens.filter(
+    (token) =>
+      productTokens.some(
+        (productToken) =>
+          productToken.includes(token) ||
+          token.includes(productToken)
+      )
   );
 
   if (matches.length > 0) {
@@ -324,9 +359,15 @@ function normalizeHueFamily(value) {
  * meaningful semantic overlap.
  */
 
-function getComplexionHueSimilarity(user, product) {
-  const userHue = normalizeHueFamily(user.hueFamily);
-  const productHue = normalizeHueFamily(product.hueFamily);
+function getComplexionHueSimilarity(
+  user,
+  product
+) {
+  const userHue =
+    normalizeHueFamily(user.hueFamily);
+
+  const productHue =
+    normalizeHueFamily(product.hueFamily);
 
   if (
     userHue.length === 0 ||
@@ -335,12 +376,13 @@ function getComplexionHueSimilarity(user, product) {
     return null;
   }
 
-  const overlap = userHue.filter((userValue) =>
-    productHue.some(
-      (productValue) =>
-        productValue.includes(userValue) ||
-        userValue.includes(productValue)
-    )
+  const overlap = userHue.filter(
+    (userValue) =>
+      productHue.some(
+        (productValue) =>
+          productValue.includes(userValue) ||
+          userValue.includes(productValue)
+      )
   );
 
   if (overlap.length > 0) {
@@ -352,22 +394,68 @@ function getComplexionHueSimilarity(user, product) {
    */
 
   const relatedFamilies = {
-    yellow: ["golden", "warm", "olive"],
-    golden: ["yellow", "warm", "olive"],
-    warm: ["yellow", "golden", "peach"],
-    peach: ["warm", "golden"],
-    pink: ["rose", "rosy", "cool"],
-    rose: ["pink", "rosy", "cool"],
-    rosy: ["pink", "rose", "cool"],
-    red: ["rose", "rosy", "pink"],
-    olive: ["yellow", "golden", "warm"],
+    yellow: [
+      "golden",
+      "warm",
+      "olive",
+    ],
+
+    golden: [
+      "yellow",
+      "warm",
+      "olive",
+    ],
+
+    warm: [
+      "yellow",
+      "golden",
+      "peach",
+    ],
+
+    peach: [
+      "warm",
+      "golden",
+    ],
+
+    pink: [
+      "rose",
+      "rosy",
+      "cool",
+    ],
+
+    rose: [
+      "pink",
+      "rosy",
+      "cool",
+    ],
+
+    rosy: [
+      "pink",
+      "rose",
+      "cool",
+    ],
+
+    red: [
+      "rose",
+      "rosy",
+      "pink",
+    ],
+
+    olive: [
+      "yellow",
+      "golden",
+      "warm",
+    ],
   };
 
   for (const userValue of userHue) {
-    const related = relatedFamilies[userValue] || [];
+    const related =
+      relatedFamilies[userValue] || [];
 
     for (const productValue of productHue) {
-      if (related.includes(productValue)) {
+      if (
+        related.includes(productValue)
+      ) {
         return 65;
       }
     }
@@ -443,30 +531,38 @@ const undertoneColorFamilies = {
   ],
 };
 
-function getMakeupColorSimilarity(user, product) {
-  const productColors = normalizeHueFamily(
-    product.hueFamily
-  );
+function getMakeupColorSimilarity(
+  user,
+  product
+) {
+  const productColors =
+    normalizeHueFamily(
+      product.hueFamily
+    );
 
   if (productColors.length === 0) {
     return null;
   }
 
-  const undertone = normalize(user.undertone);
+  const undertone =
+    normalize(user.undertone);
 
   if (!undertone) {
     return null;
   }
 
   const compatibleColors =
-    undertoneColorFamilies[undertone] || [];
+    undertoneColorFamilies[
+      undertone
+    ] || [];
 
-  const matches = productColors.filter((color) =>
-    compatibleColors.some(
-      (compatible) =>
-        color.includes(compatible) ||
-        compatible.includes(color)
-    )
+  const matches = productColors.filter(
+    (color) =>
+      compatibleColors.some(
+        (compatible) =>
+          color.includes(compatible) ||
+          compatible.includes(color)
+      )
   );
 
   if (matches.length >= 2) {
@@ -486,12 +582,15 @@ function getMakeupColorSimilarity(user, product) {
  * ---------------------------------------------------------
  */
 
-function getSkinTypeSimilarity(user, product) {
-  const userSkinType = normalize(user.skinType);
+function getSkinTypeSimilarity(
+  user,
+  product
+) {
+  const userSkinType =
+    normalize(user.skinType);
 
-  const productSkinTypes = normalizeArray(
-    product.skinTypes
-  );
+  const productSkinTypes =
+    normalizeArray(product.skinTypes);
 
   if (
     !userSkinType ||
@@ -500,7 +599,9 @@ function getSkinTypeSimilarity(user, product) {
     return null;
   }
 
-  return productSkinTypes.includes(userSkinType)
+  return productSkinTypes.includes(
+    userSkinType
+  )
     ? 100
     : 0;
 }
@@ -511,14 +612,16 @@ function getSkinTypeSimilarity(user, product) {
  * ---------------------------------------------------------
  */
 
-function getLookSimilarity(user, product) {
+function getLookSimilarity(
+  user,
+  product
+) {
   const userLook = normalize(
     user.look || user.preferredLook
   );
 
-  const productLooks = normalizeArray(
-    product.looks
-  );
+  const productLooks =
+    normalizeArray(product.looks);
 
   if (
     !userLook ||
@@ -538,12 +641,18 @@ function getLookSimilarity(user, product) {
  * ---------------------------------------------------------
  */
 
-function getBrandSimilarity(user, product) {
-  const preferredBrands = normalizeArray(
-    user.brands || user.preferredBrands
-  );
+function getBrandSimilarity(
+  user,
+  product
+) {
+  const preferredBrands =
+    normalizeArray(
+      user.brands ||
+        user.preferredBrands
+    );
 
-  const productBrand = normalize(product.brand);
+  const productBrand =
+    normalize(product.brand);
 
   if (
     preferredBrands.length === 0 ||
@@ -552,7 +661,9 @@ function getBrandSimilarity(user, product) {
     return null;
   }
 
-  return preferredBrands.includes(productBrand)
+  return preferredBrands.includes(
+    productBrand
+  )
     ? 100
     : 0;
 }
@@ -563,7 +674,9 @@ function getBrandSimilarity(user, product) {
  * ---------------------------------------------------------
  */
 
-function isComplexionCategory(category) {
+function isComplexionCategory(
+  category
+) {
   return (
     category === "foundation" ||
     category === "concealer"
@@ -588,26 +701,33 @@ function isColorCategory(category) {
  * Depth is the most important factor.
  */
 
-function getComplexionScore(user, product) {
-  const depth = getDepthSimilarity(
-    user.depth,
-    product.depth
-  );
+function getComplexionScore(
+  user,
+  product
+) {
+  const depth =
+    getDepthSimilarity(
+      user.depth,
+      product.depth
+    );
 
-  const undertone = getUndertoneSimilarity(
-    user.undertone,
-    product.undertone
-  );
+  const undertone =
+    getUndertoneSimilarity(
+      user.undertone,
+      product.undertone
+    );
 
-  const hue = getComplexionHueSimilarity(
-    user,
-    product
-  );
+  const hue =
+    getComplexionHueSimilarity(
+      user,
+      product
+    );
 
-  const detail = getUndertoneDetailSimilarity(
-    user,
-    product
-  );
+  const detail =
+    getUndertoneDetailSimilarity(
+      user,
+      product
+    );
 
   /*
    * If data is missing, redistribute the weight instead
@@ -656,21 +776,27 @@ function getComplexionScore(user, product) {
  * BLUSH / LIPSTICK / EYESHADOW
  */
 
-function getColorProductScore(user, product) {
-  const undertone = getUndertoneSimilarity(
-    user.undertone,
-    product.undertone
-  );
+function getColorProductScore(
+  user,
+  product
+) {
+  const undertone =
+    getUndertoneSimilarity(
+      user.undertone,
+      product.undertone
+    );
 
-  const color = getMakeupColorSimilarity(
-    user,
-    product
-  );
+  const color =
+    getMakeupColorSimilarity(
+      user,
+      product
+    );
 
-  const detail = getUndertoneDetailSimilarity(
-    user,
-    product
-  );
+  const detail =
+    getUndertoneDetailSimilarity(
+      user,
+      product
+    );
 
   let total = 0;
   let weight = 0;
@@ -703,13 +829,30 @@ function getColorProductScore(user, product) {
  * ---------------------------------------------------------
  */
 
-function getBeautySimilarity(user, product) {
-  if (isComplexionCategory(product.category)) {
-    return getComplexionScore(user, product);
+function getBeautySimilarity(
+  user,
+  product
+) {
+  if (
+    isComplexionCategory(
+      product.category
+    )
+  ) {
+    return getComplexionScore(
+      user,
+      product
+    );
   }
 
-  if (isColorCategory(product.category)) {
-    return getColorProductScore(user, product);
+  if (
+    isColorCategory(
+      product.category
+    )
+  ) {
+    return getColorProductScore(
+      user,
+      product
+    );
   }
 
   return 0;
@@ -741,37 +884,63 @@ function getBeautySimilarity(user, product) {
  * same score as well-classified products.
  */
 
-export function calculateMatch(user, product) {
-  const category = normalize(product.category);
+export function calculateMatch(
+  user,
+  product
+) {
+  const category =
+    normalize(product.category);
 
   const beautySimilarity =
-    getBeautySimilarity(user, product);
+    getBeautySimilarity(
+      user,
+      product
+    );
 
   const skinTypeSimilarity =
-    getSkinTypeSimilarity(user, product);
+    getSkinTypeSimilarity(
+      user,
+      product
+    );
 
   const lookSimilarity =
-    getLookSimilarity(user, product);
+    getLookSimilarity(
+      user,
+      product
+    );
 
   const brandSimilarity =
-    getBrandSimilarity(user, product);
+    getBrandSimilarity(
+      user,
+      product
+    );
 
   let score;
 
-  if (isComplexionCategory(category)) {
+  if (
+    isComplexionCategory(category)
+  ) {
     score =
       beautySimilarity * 0.85 +
-      (skinTypeSimilarity ?? 50) * 0.05 +
-      (lookSimilarity ?? 50) * 0.04 +
-      (brandSimilarity ?? 50) * 0.03 +
-      getDataQualityScore(product) * 0.03;
+      (skinTypeSimilarity ?? 50) *
+        0.05 +
+      (lookSimilarity ?? 50) *
+        0.04 +
+      (brandSimilarity ?? 50) *
+        0.03 +
+      getDataQualityScore(product) *
+        0.03;
   } else {
     score =
       beautySimilarity * 0.75 +
-      (skinTypeSimilarity ?? 50) * 0.08 +
-      (lookSimilarity ?? 50) * 0.08 +
-      (brandSimilarity ?? 50) * 0.05 +
-      getDataQualityScore(product) * 0.04;
+      (skinTypeSimilarity ?? 50) *
+        0.08 +
+      (lookSimilarity ?? 50) *
+        0.08 +
+      (brandSimilarity ?? 50) *
+        0.05 +
+      getDataQualityScore(product) *
+        0.04;
   }
 
   /*
@@ -795,7 +964,9 @@ export function calculateMatch(user, product) {
  * classification information.
  */
 
-function getDataQualityScore(product) {
+function getDataQualityScore(
+  product
+) {
   const fields = [
     product.depth,
     product.toneLevel,
@@ -820,7 +991,10 @@ function getDataQualityScore(product) {
     }
   });
 
-  return (present / fields.length) * 100;
+  return (
+    (present / fields.length) *
+    100
+  );
 }
 
 /*
@@ -829,16 +1003,22 @@ function getDataQualityScore(product) {
  * ---------------------------------------------------------
  */
 
-function getMatchReason(user, product) {
+function getMatchReason(
+  user,
+  product
+) {
   const reasons = [];
 
-  const category = normalize(product.category);
+  const category =
+    normalize(product.category);
 
   /*
    * FOUNDATION / CONCEALER
    */
 
-  if (isComplexionCategory(category)) {
+  if (
+    isComplexionCategory(category)
+  ) {
     const depthSimilarity =
       getDepthSimilarity(
         user.depth,
@@ -847,14 +1027,28 @@ function getMatchReason(user, product) {
 
     if (depthSimilarity === 100) {
       reasons.push("Exact skin depth");
-    } else if (depthSimilarity >= 78) {
-      reasons.push("Very close skin depth");
-    } else if (depthSimilarity >= 50) {
-      reasons.push("Moderately close skin depth");
-    } else if (depthSimilarity >= 25) {
-      reasons.push("Different skin depth");
+    } else if (
+      depthSimilarity >= 78
+    ) {
+      reasons.push(
+        "Very close skin depth"
+      );
+    } else if (
+      depthSimilarity >= 50
+    ) {
+      reasons.push(
+        "Moderately close skin depth"
+      );
+    } else if (
+      depthSimilarity >= 25
+    ) {
+      reasons.push(
+        "Different skin depth"
+      );
     } else {
-      reasons.push("Significantly different depth");
+      reasons.push(
+        "Significantly different depth"
+      );
     }
 
     const undertoneSimilarity =
@@ -865,12 +1059,24 @@ function getMatchReason(user, product) {
 
     if (undertoneSimilarity === 100) {
       reasons.push("Exact undertone");
-    } else if (undertoneSimilarity >= 65) {
-      reasons.push("Compatible undertone");
-    } else if (undertoneSimilarity >= 35) {
-      reasons.push("Partially compatible undertone");
-    } else if (undertoneSimilarity !== null) {
-      reasons.push("Undertone differs");
+    } else if (
+      undertoneSimilarity >= 65
+    ) {
+      reasons.push(
+        "Compatible undertone"
+      );
+    } else if (
+      undertoneSimilarity >= 35
+    ) {
+      reasons.push(
+        "Partially compatible undertone"
+      );
+    } else if (
+      undertoneSimilarity !== null
+    ) {
+      reasons.push(
+        "Undertone differs"
+      );
     }
 
     const hueSimilarity =
@@ -880,12 +1086,16 @@ function getMatchReason(user, product) {
       );
 
     if (hueSimilarity === 100) {
-      reasons.push("Compatible hue family");
+      reasons.push(
+        "Compatible hue family"
+      );
     } else if (
       hueSimilarity !== null &&
       hueSimilarity >= 60
     ) {
-      reasons.push("Related hue family");
+      reasons.push(
+        "Related hue family"
+      );
     }
   }
 
@@ -893,7 +1103,9 @@ function getMatchReason(user, product) {
    * BLUSH / LIPSTICK / EYESHADOW
    */
 
-  if (isColorCategory(category)) {
+  if (
+    isColorCategory(category)
+  ) {
     const undertoneSimilarity =
       getUndertoneSimilarity(
         user.undertone,
@@ -901,12 +1113,16 @@ function getMatchReason(user, product) {
       );
 
     if (undertoneSimilarity === 100) {
-      reasons.push("Matching undertone");
+      reasons.push(
+        "Matching undertone"
+      );
     } else if (
       undertoneSimilarity !== null &&
       undertoneSimilarity >= 65
     ) {
-      reasons.push("Compatible undertone");
+      reasons.push(
+        "Compatible undertone"
+      );
     }
 
     const colorSimilarity =
@@ -916,12 +1132,16 @@ function getMatchReason(user, product) {
       );
 
     if (colorSimilarity === 100) {
-      reasons.push("Highly compatible color family");
+      reasons.push(
+        "Highly compatible color family"
+      );
     } else if (
       colorSimilarity !== null &&
       colorSimilarity >= 80
     ) {
-      reasons.push("Compatible color family");
+      reasons.push(
+        "Compatible color family"
+      );
     }
   }
 
@@ -930,9 +1150,14 @@ function getMatchReason(user, product) {
    */
 
   if (
-    getSkinTypeSimilarity(user, product) === 100
+    getSkinTypeSimilarity(
+      user,
+      product
+    ) === 100
   ) {
-    reasons.push("Matches your skin type");
+    reasons.push(
+      "Matches your skin type"
+    );
   }
 
   /*
@@ -940,9 +1165,14 @@ function getMatchReason(user, product) {
    */
 
   if (
-    getLookSimilarity(user, product) === 100
+    getLookSimilarity(
+      user,
+      product
+    ) === 100
   ) {
-    reasons.push("Matches your preferred look");
+    reasons.push(
+      "Matches your preferred look"
+    );
   }
 
   /*
@@ -950,9 +1180,14 @@ function getMatchReason(user, product) {
    */
 
   if (
-    getBrandSimilarity(user, product) === 100
+    getBrandSimilarity(
+      user,
+      product
+    ) === 100
   ) {
-    reasons.push("Preferred brand");
+    reasons.push(
+      "Preferred brand"
+    );
   }
 
   if (reasons.length === 0) {
@@ -960,6 +1195,89 @@ function getMatchReason(user, product) {
   }
 
   return reasons.join(" + ");
+}
+
+/*
+ * ---------------------------------------------------------
+ * BUDGET VALIDATION
+ * ---------------------------------------------------------
+ *
+ * The budget slider provides:
+ *
+ *   budgetMin
+ *   budgetMax
+ *
+ * The budget is a HARD constraint.
+ *
+ * A product outside the selected range is removed BEFORE
+ * matching and scoring.
+ */
+
+function isWithinBudget(
+  user,
+  product
+) {
+  const price = Number(
+    product.price
+  );
+
+  /*
+   * Products without a valid price cannot safely be
+   * recommended because we cannot verify that they fall
+   * inside the user's budget.
+   */
+
+  if (!Number.isFinite(price)) {
+    return false;
+  }
+
+  /*
+   * New budget system.
+   */
+
+  const hasBudgetMin =
+    user.budgetMin !== undefined &&
+    user.budgetMin !== null &&
+    user.budgetMin !== "";
+
+  const hasBudgetMax =
+    user.budgetMax !== undefined &&
+    user.budgetMax !== null &&
+    user.budgetMax !== "";
+
+  /*
+   * If a minimum exists, enforce it.
+   */
+
+  if (hasBudgetMin) {
+    const minimum =
+      Number(user.budgetMin);
+
+    if (
+      Number.isFinite(minimum) &&
+      price < minimum
+    ) {
+      return false;
+    }
+  }
+
+  /*
+   * If a maximum exists, enforce it.
+   */
+
+  if (hasBudgetMax) {
+    const maximum =
+      Number(user.budgetMax);
+
+    if (
+      Number.isFinite(maximum) &&
+      price > maximum
+    ) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /*
@@ -972,138 +1290,123 @@ export function recommendProducts(
   user,
   products
 ) {
-  return products
-
-    /*
-     * -----------------------------------------------------
-     * CATEGORY FILTER
-     * -----------------------------------------------------
-     */
-
-    .filter(
-      (product) =>
-        normalize(product.category) ===
-        normalize(user.category)
-    )
-
-    /*
-     * -----------------------------------------------------
-     * CONCEALER CORRECTORS
-     * -----------------------------------------------------
-     *
-     * Correctors are not treated as normal concealers.
-     */
-
-    .filter((product) => {
-      if (
-        normalize(user.category) ===
-          "concealer" &&
-        normalize(product.type) ===
-          "corrector"
-      ) {
-        return false;
-      }
-
-      return true;
-    })
-
-    /*
-     * -----------------------------------------------------
-     * BUDGET FILTER
-     * -----------------------------------------------------
-     */
-
-    .filter((product) => {
-      const price = Number(product.price);
-
-      if (!Number.isFinite(price)) {
-        return false;
-      }
+  return (
+    products
 
       /*
-       * Minimum
+       * -----------------------------------------------------
+       * CATEGORY FILTER
+       * -----------------------------------------------------
        */
 
-      if (
-        user.budgetMin !== undefined &&
-        user.budgetMin !== null
-      ) {
-        if (
-          price < Number(user.budgetMin)
-        ) {
-          return false;
-        }
-      }
+      .filter(
+        (product) =>
+          normalize(
+            product.category
+          ) ===
+          normalize(
+            user.category
+          )
+      )
 
       /*
-       * Maximum
+       * -----------------------------------------------------
+       * CONCEALER CORRECTORS
+       * -----------------------------------------------------
        *
-       * Infinity is allowed.
+       * Correctors are not treated as normal concealers.
        */
 
-      if (
-        user.budgetMax !== undefined &&
-        user.budgetMax !== null &&
-        Number.isFinite(
-          Number(user.budgetMax)
-        )
-      ) {
+      .filter((product) => {
         if (
-          price > Number(user.budgetMax)
+          normalize(
+            user.category
+          ) === "concealer" &&
+          normalize(
+            product.type
+          ) === "corrector"
         ) {
           return false;
         }
-      }
 
-      return true;
-    })
+        return true;
+      })
 
-    /*
-     * -----------------------------------------------------
-     * SCORE
-     * -----------------------------------------------------
-     */
+      /*
+       * -----------------------------------------------------
+       * HARD BUDGET FILTER
+       * -----------------------------------------------------
+       *
+       * Products outside the selected slider range are
+       * completely removed.
+       *
+       * Example:
+       *
+       * User selects ₹500 – ₹2000
+       *
+       * ₹499     -> removed
+       * ₹500     -> allowed
+       * ₹1500    -> allowed
+       * ₹2000    -> allowed
+       * ₹2001    -> removed
+       */
 
-    .map((product) => {
-      const rawScore = calculateMatch(
-        user,
-        product
-      );
+      .filter((product) =>
+        isWithinBudget(
+          user,
+          product
+        )
+      )
 
-      return {
-        ...product,
+      /*
+       * -----------------------------------------------------
+       * SCORE
+       * -----------------------------------------------------
+       */
 
-        /*
-         * Keep two decimal places.
-         *
-         * Example:
-         * 87.34
-         * instead of
-         * 87
-         */
-
-        matchScore:
-          Math.round(
-            rawScore * 100
-          ) / 100,
-
-        matchReason:
-          getMatchReason(
+      .map((product) => {
+        const rawScore =
+          calculateMatch(
             user,
             product
-          ),
-      };
-    })
+          );
 
-    /*
-     * -----------------------------------------------------
-     * SORT
-     * -----------------------------------------------------
-     */
+        return {
+          ...product,
 
-    .sort(
-      (a, b) =>
-        b.matchScore -
-        a.matchScore
-    );
+          /*
+           * Keep two decimal places.
+           *
+           * Example:
+           * 87.34
+           *
+           * instead of:
+           * 87
+           */
+
+          matchScore:
+            Math.round(
+              rawScore * 100
+            ) / 100,
+
+          matchReason:
+            getMatchReason(
+              user,
+              product
+            ),
+        };
+      })
+
+      /*
+       * -----------------------------------------------------
+       * SORT
+       * -----------------------------------------------------
+       */
+
+      .sort(
+        (a, b) =>
+          b.matchScore -
+          a.matchScore
+      )
+  );
 }

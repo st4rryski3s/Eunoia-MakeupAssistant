@@ -6,11 +6,17 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import EunoiaNav from "../components/EunoiaNav";
 import productImages from "../productImages";
+
+import { supabase } from "../lib/supabase";
+import {
+  getSavedProducts,
+  deleteSavedProduct,
+} from "../services/supabaseData";
 
 const categoryImages = {
   foundation:
@@ -33,6 +39,7 @@ function getProductImage(product) {
   return (
     productImages[product.id] ||
     product.image ||
+    product.imageUrl ||
     categoryImages[product.category] ||
     categoryImages.foundation
   );
@@ -80,64 +87,241 @@ function getMatchScore(product) {
 export default function KitBuilder() {
   const navigate = useNavigate();
 
-  const [kit, setKit] = useState(() => {
-    try {
-      const savedKit =
-        localStorage.getItem("aura-kit");
+  const [kit, setKit] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
-      if (!savedKit) {
-        return [];
+  /*
+   * ---------------------------------------------------------
+   * LOAD SAVED PRODUCTS FROM SUPABASE
+   * ---------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadKit() {
+      try {
+        setLoading(true);
+
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        if (!user) {
+          throw new Error("No logged-in user found.");
+        }
+
+        const savedProducts = await getSavedProducts(user.id);
+
+        if (cancelled) {
+          return;
+        }
+
+        /*
+         * Convert Supabase rows back into the
+         * product format used by the Kit UI.
+         */
+
+        const formattedProducts = savedProducts.map(
+          (product) => ({
+            id: product.product_id,
+            name: product.product_name,
+            brand: product.brand,
+            category: product.category,
+            shade: product.shade,
+            price: product.price,
+            imageUrl: product.image_url,
+          })
+        );
+
+        setKit(formattedProducts);
+
+        /*
+         * Remove the old localStorage copy.
+         *
+         * Supabase is now the source of truth.
+         */
+
+        localStorage.removeItem("aura-kit");
+      } catch (error) {
+        console.error(
+          "Error loading saved products:",
+          error
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadKit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * ---------------------------------------------------------
+   * REMOVE ONE PRODUCT
+   * ---------------------------------------------------------
+   */
+
+  const removeFromKit = async (id) => {
+    try {
+      setActionLoading(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
       }
 
-      const parsed = JSON.parse(savedKit);
+      if (!user) {
+        throw new Error("No logged-in user found.");
+      }
 
-      return Array.isArray(parsed)
-        ? parsed
-        : [];
-    } catch {
-      return [];
-    }
-  });
+      /*
+       * Delete from Supabase FIRST.
+       */
 
-  const removeFromKit = (id) => {
-    setKit((currentKit) => {
-      const updatedKit = currentKit.filter(
-        (product) => product.id !== id
+      await deleteSavedProduct(
+        user.id,
+        id
       );
 
-      localStorage.setItem(
-        "aura-kit",
-        JSON.stringify(updatedKit)
+      /*
+       * Then update the UI.
+       */
+
+      setKit((currentKit) =>
+        currentKit.filter(
+          (product) =>
+            String(product.id) !== String(id)
+        )
       );
+
+      /*
+       * Tell the navbar / basket that the kit changed.
+       */
 
       window.dispatchEvent(
-        new CustomEvent("eunoia-kit-updated", {
-          detail: {
-            action: "remove",
-          },
-        })
+        new CustomEvent(
+          "eunoia-kit-updated",
+          {
+            detail: {
+              action: "remove",
+              product: {
+                id,
+              },
+            },
+          }
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Error removing product from kit:",
+        error
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * DELETE ALL PRODUCTS
+   * ---------------------------------------------------------
+   */
+
+  const deleteAll = async () => {
+    try {
+      setActionLoading(true);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        throw new Error("No logged-in user found.");
+      }
+
+      /*
+       * Delete every saved product from Supabase.
+       *
+       * We intentionally use the existing
+       * deleteSavedProduct() function so we don't
+       * need another database function.
+       */
+
+      const currentProducts = [...kit];
+
+      await Promise.all(
+        currentProducts.map((product) =>
+          deleteSavedProduct(
+            user.id,
+            product.id
+          )
+        )
       );
 
-      return updatedKit;
-    });
+      /*
+       * Clear the UI only after Supabase
+       * deletion succeeds.
+       */
+
+      setKit([]);
+
+      /*
+       * Remove any old localStorage copy.
+       */
+
+      localStorage.removeItem("aura-kit");
+
+      /*
+       * Update navbar / basket.
+       */
+
+      window.dispatchEvent(
+        new CustomEvent(
+          "eunoia-kit-updated",
+          {
+            detail: {
+              action: "clear",
+            },
+          }
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Error deleting all saved products:",
+        error
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const deleteAll = () => {
-    setKit([]);
-
-    localStorage.setItem(
-      "aura-kit",
-      JSON.stringify([])
-    );
-
-    window.dispatchEvent(
-      new CustomEvent("eunoia-kit-updated", {
-        detail: {
-          action: "clear",
-        },
-      })
-    );
-  };
+  /*
+   * ---------------------------------------------------------
+   * TOTAL
+   * ---------------------------------------------------------
+   */
 
   const total = useMemo(() => {
     return kit.reduce(
@@ -147,6 +331,36 @@ export default function KitBuilder() {
     );
   }, [kit]);
 
+  /*
+   * ---------------------------------------------------------
+   * LOADING STATE
+   * ---------------------------------------------------------
+   */
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
+        <EunoiaNav />
+
+        <main className="flex min-h-[70vh] items-center justify-center px-6">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-500">
+              EUNOIA / MY KIT
+            </p>
+
+            <h1 className="mt-5 text-4xl font-semibold">
+              Loading your kit...
+            </h1>
+
+            <p className="mt-4 text-sm text-gray-500">
+              Retrieving your saved products.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
 
@@ -155,7 +369,6 @@ export default function KitBuilder() {
       ===================================================== */}
 
       <EunoiaNav />
-
 
       {/* =====================================================
           MAIN
@@ -196,7 +409,6 @@ export default function KitBuilder() {
 
         </section>
 
-
         {/* ===================================================
             EMPTY STATE
         =================================================== */}
@@ -205,7 +417,10 @@ export default function KitBuilder() {
           <section className="mt-16 border-y border-black/10 py-24 text-center">
 
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-black/20">
-              <ShoppingBag size={24} strokeWidth={1.5} />
+              <ShoppingBag
+                size={24}
+                strokeWidth={1.5}
+              />
             </div>
 
             <h2 className="mt-8 text-3xl font-semibold">
@@ -219,7 +434,9 @@ export default function KitBuilder() {
 
             <button
               type="button"
-              onClick={() => navigate("/results")}
+              onClick={() =>
+                navigate("/results")
+              }
               className="
                 mt-8
                 inline-flex
@@ -243,7 +460,6 @@ export default function KitBuilder() {
 
           </section>
         )}
-
 
         {/* ===================================================
             KIT CONTENT
@@ -272,7 +488,6 @@ export default function KitBuilder() {
 
                 </div>
 
-
                 <div className="border-b border-black/10 p-6 md:border-b-0 md:border-r">
 
                   <p className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
@@ -280,11 +495,13 @@ export default function KitBuilder() {
                   </p>
 
                   <p className="mt-3 text-3xl font-semibold">
-                    ₹{total.toLocaleString("en-IN")}
+                    ₹
+                    {total.toLocaleString(
+                      "en-IN"
+                    )}
                   </p>
 
                 </div>
-
 
                 <div className="p-6">
 
@@ -308,7 +525,6 @@ export default function KitBuilder() {
 
             </section>
 
-
             {/* =================================================
                 SELECTED PRODUCTS
             ================================================= */}
@@ -329,12 +545,12 @@ export default function KitBuilder() {
 
                 </div>
 
-
                 <div className="flex items-center gap-5">
 
                   <button
                     type="button"
                     onClick={deleteAll}
+                    disabled={actionLoading}
                     className="
                       flex
                       items-center
@@ -346,6 +562,8 @@ export default function KitBuilder() {
                       text-[#8b5f53]
                       transition
                       hover:text-black
+                      disabled:cursor-not-allowed
+                      disabled:opacity-50
                     "
                   >
                     <Trash2 size={14} />
@@ -354,7 +572,9 @@ export default function KitBuilder() {
 
                   <button
                     type="button"
-                    onClick={() => navigate("/results")}
+                    onClick={() =>
+                      navigate("/results")
+                    }
                     className="
                       hidden
                       items-center
@@ -374,149 +594,155 @@ export default function KitBuilder() {
 
               </div>
 
-
               <div className="divide-y divide-black/10 border-y border-black/10">
 
-                {kit.map((product, index) => {
+                {kit.map(
+                  (product, index) => {
 
-                  const image =
-                    getProductImage(product);
+                    const image =
+                      getProductImage(product);
 
-                  const score =
-                    getMatchScore(product);
+                    const score =
+                      getMatchScore(product);
 
-                  return (
-                    <article
-                      key={product.id}
-                      className="
-                        grid
-                        gap-6
-                        py-6
-                        md:grid-cols-[60px_180px_1fr_auto]
-                        md:items-center
-                      "
-                    >
+                    return (
+                      <article
+                        key={product.id}
+                        className="
+                          grid
+                          gap-6
+                          py-6
+                          md:grid-cols-[60px_180px_1fr_auto]
+                          md:items-center
+                        "
+                      >
 
-                      {/* NUMBER */}
+                        {/* NUMBER */}
 
-                      <div className="hidden md:block">
+                        <div className="hidden md:block">
 
-                        <span className="text-xs font-semibold">
-                          {String(index + 1).padStart(
-                            2,
-                            "0"
-                          )}
-                        </span>
+                          <span className="text-xs font-semibold">
+                            {String(
+                              index + 1
+                            ).padStart(2, "0")}
+                          </span>
 
-                      </div>
+                        </div>
 
+                        {/* IMAGE */}
 
-                      {/* IMAGE */}
+                        <div className="aspect-square overflow-hidden bg-[#e9e5e1]">
 
-                      <div className="aspect-square overflow-hidden bg-[#e9e5e1]">
+                          <img
+                            src={image}
+                            alt={product.name}
+                            className="
+                              h-full
+                              w-full
+                              object-cover
+                              transition
+                              duration-500
+                              hover:scale-[1.03]
+                            "
+                            onError={(
+                              event
+                            ) => {
+                              event.currentTarget.src =
+                                categoryImages[
+                                  product.category
+                                ] ||
+                                categoryImages.foundation;
+                            }}
+                          />
 
-                        <img
-                          src={image}
-                          alt={product.name}
-                          className="
-                            h-full
-                            w-full
-                            object-cover
-                            transition
-                            duration-500
-                            hover:scale-[1.03]
-                          "
-                          onError={(event) => {
-                            event.currentTarget.src =
-                              categoryImages[
-                                product.category
-                              ] ||
-                              categoryImages.foundation;
-                          }}
-                        />
+                        </div>
 
-                      </div>
+                        {/* INFO */}
 
+                        <div>
 
-                      {/* INFO */}
-
-                      <div>
-
-                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/50">
-                          {product.brand}
-                        </p>
-
-                        <h3 className="mt-2 text-xl font-semibold">
-                          {product.name}
-                        </h3>
-
-                        {product.shade && (
-                          <p className="mt-2 text-sm text-gray-500">
-                            Shade: {product.shade}
+                          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-black/50">
+                            {product.brand}
                           </p>
-                        )}
 
-                        {score !== null && (
-                          <div className="mt-4 flex items-center gap-2">
+                          <h3 className="mt-2 text-xl font-semibold">
+                            {product.name}
+                          </h3>
 
-                            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.15em]">
+                          {product.shade && (
+                            <p className="mt-2 text-sm text-gray-500">
+                              Shade:{" "}
+                              {product.shade}
+                            </p>
+                          )}
 
-                              <Check size={13} />
+                          {score !== null && (
+                            <div className="mt-4 flex items-center gap-2">
 
-                              {score}% match
+                              <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.15em]">
 
-                            </span>
+                                <Check size={13} />
 
-                          </div>
-                        )}
+                                {score}% match
 
-                      </div>
+                              </span>
 
+                            </div>
+                          )}
 
-                      {/* PRICE + DELETE */}
+                        </div>
 
-                      <div className="flex items-center justify-between gap-6 md:justify-end">
+                        {/* PRICE + DELETE */}
 
-                        <p className="text-lg font-semibold">
-                          ₹
-                          {Number(
-                            product.price || 0
-                          ).toLocaleString("en-IN")}
-                        </p>
+                        <div className="flex items-center justify-between gap-6 md:justify-end">
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeFromKit(
-                              product.id
-                            )
-                          }
-                          className="
-                            flex
-                            h-10
-                            w-10
-                            items-center
-                            justify-center
-                            border
-                            border-black/10
-                            transition
-                            hover:border-black
-                          "
-                          aria-label={`Remove ${product.name}`}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                          <p className="text-lg font-semibold">
+                            ₹
+                            {Number(
+                              product.price || 0
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </p>
 
-                      </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeFromKit(
+                                product.id
+                              )
+                            }
+                            disabled={
+                              actionLoading
+                            }
+                            className="
+                              flex
+                              h-10
+                              w-10
+                              items-center
+                              justify-center
+                              border
+                              border-black/10
+                              transition
+                              hover:border-black
+                              disabled:cursor-not-allowed
+                              disabled:opacity-50
+                            "
+                            aria-label={`Remove ${product.name}`}
+                          >
+                            <Trash2 size={16} />
+                          </button>
 
-                    </article>
-                  );
-                })}
+                        </div>
+
+                      </article>
+                    );
+                  }
+                )}
 
               </div>
 
             </section>
-
 
             {/* =================================================
                 BOTTOM INFORMATION
@@ -544,7 +770,6 @@ export default function KitBuilder() {
 
               </div>
 
-
               <div className="border-t border-black pt-6">
 
                 <div className="flex items-center gap-3">
@@ -564,7 +789,9 @@ export default function KitBuilder() {
 
                 <button
                   type="button"
-                  onClick={() => navigate("/results")}
+                  onClick={() =>
+                    navigate("/results")
+                  }
                   className="
                     mt-6
                     flex
@@ -588,7 +815,6 @@ export default function KitBuilder() {
         )}
 
       </main>
-
 
       {/* =====================================================
           FOOTER

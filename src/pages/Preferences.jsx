@@ -40,48 +40,6 @@ const looks = [
   },
 ];
 
-/*
- * Budget ranges
- *
- * min = minimum allowed product price
- * max = maximum allowed product price
- *
- * Under ₹1,000:
- * ₹0 - ₹999
- *
- * ₹1,000–₹2,000:
- * ₹1,000 - ₹2,000
- *
- * ₹2,000–₹4,000:
- * ₹2,000 - ₹4,000
- *
- * ₹4,000+:
- * ₹4,000 and above
- */
-
-const budgets = [
-  {
-    label: "Under ₹1,000",
-    min: 0,
-    max: 999,
-  },
-  {
-    label: "₹1,000–₹2,000",
-    min: 1000,
-    max: 2000,
-  },
-  {
-    label: "₹2,000–₹4,000",
-    min: 2000,
-    max: 4000,
-  },
-  {
-    label: "₹4,000+",
-    min: 4000,
-    max: Infinity,
-  },
-];
-
 const brands = [
   "Maybelline",
   "Lancôme",
@@ -99,97 +57,80 @@ export default function Preferences() {
 
   const [skinType, setSkinType] = useState("");
   const [look, setLook] = useState("");
-  const [budget, setBudget] = useState("");
+
+  // Budget slider
+  const [budgetMin, setBudgetMin] = useState(0);
+  const [budgetMax, setBudgetMax] = useState(5000);
+
   const [selectedBrands, setSelectedBrands] = useState([]);
 
   const toggleBrand = (brand) => {
     setSelectedBrands((current) => {
       if (current.includes(brand)) {
-        return current.filter(
-          (item) => item !== brand
-        );
+        return current.filter((item) => item !== brand);
       }
 
       return [...current, brand];
     });
   };
 
-  const handleContinue = async () => {
-    if (!skinType || !look || !budget) {
-      return;
-    }
+  const handleMinBudgetChange = (event) => {
+    const value = Number(event.target.value);
 
-    const selectedBudget = budgets.find(
-      (item) => item.label === budget
+    setBudgetMin(
+      Math.min(value, budgetMax - 50)
     );
+  };
 
-    /*
-     * Store BOTH budget limits.
-     *
-     * The matcher will use:
-     *
-     * budgetMin
-     * budgetMax
-     *
-     * instead of treating the selected value
-     * as only a maximum.
-     */
+  const handleMaxBudgetChange = (event) => {
+    const value = Number(event.target.value);
+
+    setBudgetMax(
+      Math.max(value, budgetMin + 50)
+    );
+  };
+
+  const handleContinue = async () => {
+    // DEBUG:
+    // Check exactly what brands are selected before saving.
+    console.log("SELECTED BRANDS:", selectedBrands);
+
     const preferences = {
       skinType,
       look,
-
-      budgetMin:
-        selectedBudget?.min ?? 0,
-
-      budgetMax:
-        selectedBudget?.max ?? Infinity,
-
-      budgetLabel: budget,
-
+      budgetMin,
+      budgetMax,
+      budgetLabel: `₹${budgetMin.toLocaleString(
+        "en-IN"
+      )} – ₹${budgetMax.toLocaleString(
+        "en-IN"
+      )}`,
       brands: selectedBrands,
     };
 
-    /*
-     * Keep Person 1's existing localStorage behavior.
-     */
     localStorage.setItem(
       "aura-preferences",
       JSON.stringify(preferences)
     );
 
     try {
-      /*
-       * Get the currently logged-in Supabase user.
-       */
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        console.error(
-          "No logged-in user found."
-        );
+        console.error("No logged-in user found.");
         return;
       }
 
-      /*
-       * Supabase currently stores the selected
-       * budget RANGE LABEL.
-       *
-       * We keep this unchanged because the
-       * preferences table already uses
-       * budget_range.
-       */
       await savePreferences(user.id, {
         skinType,
         preferredLook: look,
-        budgetRange: budget,
+        budgetMin,
+        budgetMax,
         preferredBrands: selectedBrands,
       });
 
-      /*
-       * Continue to the existing Results page.
-       */
       navigate("/results");
     } catch (error) {
       console.error(
@@ -201,8 +142,7 @@ export default function Preferences() {
 
   const canContinue =
     skinType !== "" &&
-    look !== "" &&
-    budget !== "";
+    look !== "";
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
@@ -227,6 +167,7 @@ export default function Preferences() {
           </button>
 
           <div className="flex items-center gap-4">
+
             <button
               aria-label="Search"
               className="hidden sm:block"
@@ -240,6 +181,7 @@ export default function Preferences() {
             >
               <ShoppingBag size={18} />
             </button>
+
           </div>
 
         </div>
@@ -311,6 +253,7 @@ export default function Preferences() {
         <section className="border-b border-black/10 pb-14">
 
           <div className="mb-7">
+
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
               01
             </p>
@@ -318,6 +261,7 @@ export default function Preferences() {
             <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em] md:text-4xl">
               What's your skin type?
             </h2>
+
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -338,6 +282,7 @@ export default function Preferences() {
                       : "border-black/10 bg-white hover:border-black/40"
                   }`}
                 >
+
                   <p className="text-sm font-bold uppercase tracking-[0.1em]">
                     {type}
                   </p>
@@ -347,6 +292,7 @@ export default function Preferences() {
                       Selected
                     </p>
                   )}
+
                 </button>
               );
             })}
@@ -359,6 +305,7 @@ export default function Preferences() {
         <section className="border-b border-black/10 py-14">
 
           <div className="mb-7">
+
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
               02
             </p>
@@ -366,6 +313,7 @@ export default function Preferences() {
             <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em] md:text-4xl">
               What's your look?
             </h2>
+
           </div>
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -388,6 +336,7 @@ export default function Preferences() {
                 >
 
                   <div className="aspect-[4/5] overflow-hidden">
+
                     <img
                       src={item.image}
                       alt={item.name}
@@ -397,6 +346,7 @@ export default function Preferences() {
                           : "group-hover:scale-105"
                       }`}
                     />
+
                   </div>
 
                   <div
@@ -406,9 +356,11 @@ export default function Preferences() {
                         : "bg-white/90"
                     }`}
                   >
+
                     <p className="text-sm font-black uppercase tracking-[0.1em]">
                       {item.name}
                     </p>
+
                   </div>
 
                 </button>
@@ -422,7 +374,9 @@ export default function Preferences() {
         {/* BUDGET */}
         <section className="border-b border-black/10 py-14">
 
-          <div className="mb-7">
+          {/* BUDGET HEADING — LEFT ALIGNED */}
+          <div className="mb-10">
+
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-black/40">
               03
             </p>
@@ -430,32 +384,150 @@ export default function Preferences() {
             <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.04em] md:text-4xl">
               What's your budget?
             </h2>
+
+            <p className="mt-3 max-w-xl text-sm leading-6 text-black/50">
+              Choose the price range you'd like Eunoia to
+              consider.
+            </p>
+
           </div>
 
-          <div className="grid gap-3 md:grid-cols-4">
+          {/* CENTERED BUDGET CONTROL */}
+          <div className="mx-auto w-full max-w-5xl">
 
-            {budgets.map((item) => {
-              const selected =
-                budget === item.label;
+            {/* CURRENT VALUES */}
+            <div className="mx-auto mb-8 flex w-[85%] max-w-[1000px] items-end justify-between gap-6">
 
-              return (
-                <button
-                  key={item.label}
-                  onClick={() =>
-                    setBudget(item.label)
-                  }
-                  className={`border px-5 py-6 text-left transition ${
-                    selected
-                      ? "border-[#111111] bg-[#111111] text-white"
-                      : "border-black/10 bg-white hover:border-black/40"
-                  }`}
-                >
-                  <p className="text-sm font-bold uppercase tracking-[0.08em]">
-                    {item.label}
+              <div>
+
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-black/40">
+                  Minimum
+                </p>
+
+                <p className="mt-1 text-3xl font-black tracking-[-0.05em]">
+                  ₹{budgetMin.toLocaleString(
+                    "en-IN"
+                  )}
+                </p>
+
+              </div>
+
+              <div className="text-right">
+
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-black/40">
+                  Maximum
+                </p>
+
+                <p className="mt-1 text-3xl font-black tracking-[-0.05em]">
+                  ₹{budgetMax.toLocaleString(
+                    "en-IN"
+                  )}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* SLIDER */}
+            <div className="budget-slider">
+
+              <div className="budget-slider-track" />
+
+              <div
+                className="budget-slider-range"
+                style={{
+                  left: `${(budgetMin / 5000) * 100}%`,
+                  right: `${
+                    100 -
+                    (budgetMax / 5000) * 100
+                  }%`,
+                }}
+              />
+
+              {/* MINIMUM HANDLE */}
+              <input
+                type="range"
+                min="0"
+                max="5000"
+                step="50"
+                value={budgetMin}
+                onChange={
+                  handleMinBudgetChange
+                }
+                className="budget-slider-input budget-slider-min"
+                aria-label="Minimum budget"
+              />
+
+              {/* MAXIMUM HANDLE */}
+              <input
+                type="range"
+                min="0"
+                max="5000"
+                step="50"
+                value={budgetMax}
+                onChange={
+                  handleMaxBudgetChange
+                }
+                className="budget-slider-input budget-slider-max"
+                aria-label="Maximum budget"
+              />
+
+            </div>
+
+            {/* SCALE */}
+            <div className="mx-auto mt-5 flex w-[85%] max-w-[1000px] justify-between text-[9px] font-bold uppercase tracking-[0.12em] text-black/35">
+
+              <span>₹0</span>
+              <span>₹1,000</span>
+              <span>₹2,000</span>
+              <span>₹3,000</span>
+              <span>₹4,000</span>
+              <span>₹5,000</span>
+
+            </div>
+
+            {/* SELECTED RANGE */}
+            <div className="mx-auto mt-8 w-[85%] max-w-[1000px] border border-black/10 bg-white px-5 py-4">
+
+              <div className="flex items-center justify-between">
+
+                <div>
+
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-black/40">
+                    Selected range
                   </p>
-                </button>
-              );
-            })}
+
+                  <p className="mt-1 text-sm font-black uppercase tracking-[0.08em]">
+                    ₹{budgetMin.toLocaleString(
+                      "en-IN"
+                    )}
+                    {" – "}
+                    ₹{budgetMax.toLocaleString(
+                      "en-IN"
+                    )}
+                  </p>
+
+                </div>
+
+                <div className="text-right">
+
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-black/40">
+                    Range
+                  </p>
+
+                  <p className="mt-1 text-sm font-black">
+                    ₹{(
+                      budgetMax - budgetMin
+                    ).toLocaleString(
+                      "en-IN"
+                    )}
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
 
           </div>
 
@@ -512,6 +584,7 @@ export default function Preferences() {
         <section className="flex flex-col items-start justify-between gap-6 pt-12 md:flex-row md:items-center">
 
           <div>
+
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-black/40">
               Almost there
             </p>
@@ -520,6 +593,7 @@ export default function Preferences() {
               We'll combine these preferences with your skin
               analysis to create your recommendations.
             </p>
+
           </div>
 
           <button
@@ -541,6 +615,7 @@ export default function Preferences() {
 
       {/* FOOTER */}
       <footer className="border-t border-black/10">
+
         <div className="mx-auto flex max-w-[1500px] items-center justify-between px-6 py-8 md:px-10">
 
           <p className="text-xl font-black tracking-[-0.08em]">
@@ -552,6 +627,7 @@ export default function Preferences() {
           </p>
 
         </div>
+
       </footer>
 
     </div>

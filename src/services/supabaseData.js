@@ -12,7 +12,11 @@ export async function savePreferences(userId, preferences) {
         user_id: userId,
         skin_type: preferences.skinType,
         preferred_look: preferences.preferredLook,
-        budget_range: preferences.budgetRange,
+
+        // New dual-slider budget values
+        budget_min: preferences.budgetMin,
+        budget_max: preferences.budgetMax,
+
         preferred_brands: preferences.preferredBrands,
       },
       {
