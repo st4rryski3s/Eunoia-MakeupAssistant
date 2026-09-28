@@ -18,25 +18,9 @@ import {
 
 import { supabase } from "../lib/supabase";
 
-const KIT_KEY = "aura-kit";
-
-function getKitCount() {
-  try {
-    const saved = localStorage.getItem(KIT_KEY);
-
-    if (!saved) {
-      return 0;
-    }
-
-    const parsed = JSON.parse(saved);
-
-    return Array.isArray(parsed)
-      ? parsed.length
-      : 0;
-  } catch {
-    return 0;
-  }
-}
+import {
+  getSavedProducts,
+} from "../services/supabaseData";
 
 export default function EunoiaNav({
   dark = false,
@@ -45,8 +29,7 @@ export default function EunoiaNav({
 }) {
   const location = useLocation();
 
-  const [kitCount, setKitCount] =
-    useState(getKitCount);
+  const [kitCount, setKitCount] = useState(0);
 
   const [menuOpen, setMenuOpen] =
     useState(false);
@@ -60,10 +43,127 @@ export default function EunoiaNav({
   const animationTimer =
     useRef(null);
 
-  useEffect(() => {
-    const handleKitUpdate = (event) => {
-      setKitCount(getKitCount());
+  /*
+   * ---------------------------------------------------------
+   * LOAD KIT COUNT FROM SUPABASE
+   * ---------------------------------------------------------
+   *
+   * Supabase is now the single source of truth.
+   * We do NOT count localStorage anymore.
+   */
 
+  const loadKitCount = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error(
+          "Error getting current user:",
+          userError
+        );
+
+        setKitCount(0);
+        return;
+      }
+
+      if (!user) {
+        setKitCount(0);
+        return;
+      }
+
+      const savedProducts =
+        await getSavedProducts(user.id);
+
+      setKitCount(
+        Array.isArray(savedProducts)
+          ? savedProducts.length
+          : 0
+      );
+    } catch (error) {
+      console.error(
+        "Error loading kit count:",
+        error
+      );
+
+      setKitCount(0);
+    }
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * INITIAL LOAD + KIT UPDATE LISTENER
+   * ---------------------------------------------------------
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCount = async () => {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (userError) {
+          console.error(
+            "Error getting current user:",
+            userError
+          );
+
+          setKitCount(0);
+          return;
+        }
+
+        if (!user) {
+          setKitCount(0);
+          return;
+        }
+
+        const savedProducts =
+          await getSavedProducts(user.id);
+
+        if (cancelled) {
+          return;
+        }
+
+        setKitCount(
+          Array.isArray(savedProducts)
+            ? savedProducts.length
+            : 0
+        );
+      } catch (error) {
+        if (!cancelled) {
+          console.error(
+            "Error loading kit count:",
+            error
+          );
+
+          setKitCount(0);
+        }
+      }
+    };
+
+    loadCount();
+
+    /*
+     * Listen for products being added/removed
+     * anywhere in the application.
+     */
+    const handleKitUpdate = async (event) => {
+      await loadKitCount();
+
+      /*
+       * Animate the floating basket when a product
+       * has been added.
+       */
       if (
         showFloatingBasket &&
         event?.detail?.action === "add"
@@ -87,32 +187,35 @@ export default function EunoiaNav({
       }
     };
 
-    const handleStorage = () => {
-      setKitCount(getKitCount());
-    };
+    /*
+     * Listen for Supabase authentication changes.
+     *
+     * This makes sure the number resets when the
+     * user logs out and loads the correct user's
+     * kit after login.
+     */
+    const {
+      data: authListener,
+    } = supabase.auth.onAuthStateChange(
+      () => {
+        loadKitCount();
+      }
+    );
 
     window.addEventListener(
       "eunoia-kit-updated",
       handleKitUpdate
     );
 
-    window.addEventListener(
-      "storage",
-      handleStorage
-    );
-
-    setKitCount(getKitCount());
-
     return () => {
+      cancelled = true;
+
       window.removeEventListener(
         "eunoia-kit-updated",
         handleKitUpdate
       );
 
-      window.removeEventListener(
-        "storage",
-        handleStorage
-      );
+      authListener?.subscription?.unsubscribe();
 
       if (animationTimer.current) {
         clearTimeout(
@@ -120,14 +223,23 @@ export default function EunoiaNav({
         );
       }
     };
-  }, [
-    showFloatingBasket,
-    location.pathname,
-  ]);
+  }, [showFloatingBasket]);
+
+  /*
+   * ---------------------------------------------------------
+   * CLOSE MOBILE MENU WHEN PAGE CHANGES
+   * ---------------------------------------------------------
+   */
 
   useEffect(() => {
     setMenuOpen(false);
   }, [location.pathname]);
+
+  /*
+   * ---------------------------------------------------------
+   * LOGOUT
+   * ---------------------------------------------------------
+   */
 
   const handleLogout = async () => {
     if (loggingOut) {
@@ -151,6 +263,11 @@ export default function EunoiaNav({
         return;
       }
 
+      /*
+       * Immediately reset the displayed kit count.
+       */
+      setKitCount(0);
+
       window.location.href = "/";
     } catch (error) {
       console.error(
@@ -161,6 +278,12 @@ export default function EunoiaNav({
       setLoggingOut(false);
     }
   };
+
+  /*
+   * ---------------------------------------------------------
+   * NAVIGATION LINKS
+   * ---------------------------------------------------------
+   */
 
   const navLinks = [
     {
@@ -188,6 +311,12 @@ export default function EunoiaNav({
   const textColor = dark
     ? "text-white"
     : "text-[#111111]";
+
+  /*
+   * ---------------------------------------------------------
+   * UI
+   * ---------------------------------------------------------
+   */
 
   return (
     <>
@@ -237,6 +366,7 @@ export default function EunoiaNav({
           "
         >
           {/* LOGO + EUNOIA */}
+
           <Link
             to="/"
             className="
@@ -250,7 +380,8 @@ export default function EunoiaNav({
             "
             aria-label="EUNOIA home"
           >
-            {/* YOUR ACTUAL LOGO IMAGE */}
+            {/* ACTUAL LOGO */}
+
             <img
               src="/eunoia-logo.png"
               alt=""
@@ -264,6 +395,7 @@ export default function EunoiaNav({
             />
 
             {/* TYPED EUNOIA */}
+
             <span
               className="
                 eunoia-logo
@@ -279,6 +411,7 @@ export default function EunoiaNav({
           </Link>
 
           {/* DESKTOP NAV */}
+
           <nav
             className="
               hidden
@@ -335,6 +468,7 @@ export default function EunoiaNav({
           </nav>
 
           {/* RIGHT SIDE */}
+
           <div
             className="
               flex
@@ -344,6 +478,7 @@ export default function EunoiaNav({
             "
           >
             {/* MY KIT */}
+
             <Link
               to="/kit"
               className={`
@@ -391,6 +526,8 @@ export default function EunoiaNav({
                 My Kit
               </span>
 
+              {/* SUPABASE KIT COUNT */}
+
               <span
                 className={`
                   flex
@@ -414,6 +551,7 @@ export default function EunoiaNav({
             </Link>
 
             {/* LOG OUT */}
+
             <button
               type="button"
               onClick={handleLogout}
@@ -462,6 +600,7 @@ export default function EunoiaNav({
             </button>
 
             {/* MOBILE MENU */}
+
             <button
               type="button"
               onClick={() =>
@@ -489,6 +628,7 @@ export default function EunoiaNav({
         </div>
 
         {/* MOBILE MENU */}
+
         {menuOpen && (
           <div
             className="
@@ -555,6 +695,7 @@ export default function EunoiaNav({
       </header>
 
       {/* FLOATING BASKET */}
+
       {showFloatingBasket && (
         <Link
           to="/kit"
@@ -601,6 +742,8 @@ export default function EunoiaNav({
               z-10
             "
           />
+
+          {/* SAME SUPABASE KIT COUNT */}
 
           <span
             className={`

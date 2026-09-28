@@ -13,6 +13,8 @@ Personalized makeup kit
 Saved products stored in Supabase
 User-specific data protection with Row Level Security
 Responsive web interface
+Cross foundation matcher
+
 How It Works
 Create an account or log in.
 Scan your face using the skin analysis feature.
@@ -25,6 +27,7 @@ Preferred brands
 Receive personalized makeup recommendations.
 Add products to your makeup kit.
 Your preferences, analysis, and saved products are securely stored in your account.
+Aside from that, you can match shades between concealers and foundations from different brands
 
 Tech Stack
 

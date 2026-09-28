@@ -1,7 +1,25 @@
-import { useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ShoppingBag } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  ArrowRight,
+  Check,
+  ShoppingBag,
+} from "lucide-react";
 
 import productImages from "../productImages";
+
+import { supabase } from "../lib/supabase";
+
+import {
+  getSavedProducts,
+  saveProduct,
+  deleteSavedProduct,
+} from "../services/supabaseData";
 
 import {
   getBrandsForCategory,
@@ -39,22 +57,6 @@ function getProductImage(product) {
   );
 }
 
-function getInitialKit() {
-  try {
-    const saved = localStorage.getItem(KIT_KEY);
-
-    if (!saved) {
-      return [];
-    }
-
-    const parsed = JSON.parse(saved);
-
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
 export default function ShadeMatch() {
   const [category, setCategory] =
     useState("foundation");
@@ -68,19 +70,107 @@ export default function ShadeMatch() {
   const [targetBrand, setTargetBrand] =
     useState("");
 
-  const [matches, setMatches] = useState([]);
+  const [matches, setMatches] =
+    useState([]);
 
   const [hasSearched, setHasSearched] =
     useState(false);
 
   const [kit, setKit] =
-    useState(getInitialKit);
+    useState([]);
+
+  const [kitLoading, setKitLoading] =
+    useState(true);
 
   const resultsRef = useRef(null);
+
+  /*
+   * =========================================================
+   * LOAD KIT FROM SUPABASE
+   * =========================================================
+   */
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadKit() {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          throw userError;
+        }
+
+        if (!user) {
+          setKit([]);
+          return;
+        }
+
+        const savedProducts =
+          await getSavedProducts(user.id);
+
+        if (cancelled) {
+          return;
+        }
+
+        const normalizedKit =
+          savedProducts.map((product) => ({
+            id: product.product_id,
+            name: product.product_name,
+            brand: product.brand,
+            category: product.category,
+            shade: product.shade,
+            price: product.price,
+            imageUrl: product.image_url,
+          }));
+
+        setKit(normalizedKit);
+
+        /*
+         * Keep localStorage synchronized so the
+         * existing navbar/basket UI stays updated.
+         */
+        localStorage.setItem(
+          KIT_KEY,
+          JSON.stringify(normalizedKit)
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load saved kit:",
+          error
+        );
+      } finally {
+        if (!cancelled) {
+          setKitLoading(false);
+        }
+      }
+    }
+
+    loadKit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /*
+   * =========================================================
+   * SOURCE BRANDS
+   * =========================================================
+   */
 
   const sourceBrands = useMemo(() => {
     return getBrandsForCategory(category);
   }, [category]);
+
+  /*
+   * =========================================================
+   * SOURCE PRODUCTS
+   * =========================================================
+   */
 
   const sourceProducts = useMemo(() => {
     if (!sourceBrand) {
@@ -91,11 +181,26 @@ export default function ShadeMatch() {
       category,
       sourceBrand
     );
-  }, [category, sourceBrand]);
+  }, [
+    category,
+    sourceBrand,
+  ]);
+
+  /*
+   * =========================================================
+   * TARGET BRANDS
+   * =========================================================
+   */
 
   const targetBrands = useMemo(() => {
     return getBrandsForCategory(category);
   }, [category]);
+
+  /*
+   * =========================================================
+   * SELECTED PRODUCT
+   * =========================================================
+   */
 
   const selectedProduct = useMemo(() => {
     return sourceProducts.find(
@@ -107,6 +212,12 @@ export default function ShadeMatch() {
     sourceProduct,
   ]);
 
+  /*
+   * =========================================================
+   * CATEGORY
+   * =========================================================
+   */
+
   function handleCategoryChange(value) {
     setCategory(value);
     setSourceBrand("");
@@ -116,12 +227,24 @@ export default function ShadeMatch() {
     setHasSearched(false);
   }
 
+  /*
+   * =========================================================
+   * SOURCE BRAND
+   * =========================================================
+   */
+
   function handleSourceBrandChange(value) {
     setSourceBrand(value);
     setSourceProduct("");
     setMatches([]);
     setHasSearched(false);
   }
+
+  /*
+   * =========================================================
+   * FIND MATCH
+   * =========================================================
+   */
 
   function handleFindMatch() {
     if (
@@ -153,51 +276,141 @@ export default function ShadeMatch() {
     });
   }
 
-  function toggleKit(product) {
-    setKit((currentKit) => {
-      const alreadyAdded = currentKit.some(
-        (item) => item.id === product.id
-      );
+  /*
+   * =========================================================
+   * ADD / REMOVE FROM KIT
+   * =========================================================
+   */
 
-      let updatedKit;
+  async function toggleKit(product) {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      if (!user) {
+        console.error(
+          "No logged-in user found."
+        );
+        return;
+      }
+
+      const alreadyAdded =
+        kit.some(
+          (item) =>
+            item.id === product.id
+        );
+
+      /*
+       * =====================================================
+       * REMOVE FROM KIT
+       * =====================================================
+       */
 
       if (alreadyAdded) {
-        updatedKit = currentKit.filter(
-          (item) => item.id !== product.id
+        await deleteSavedProduct(
+          user.id,
+          product.id
         );
-      } else {
-        updatedKit = [
+
+        setKit((currentKit) => {
+          const updatedKit =
+            currentKit.filter(
+              (item) =>
+                item.id !== product.id
+            );
+
+          localStorage.setItem(
+            KIT_KEY,
+            JSON.stringify(updatedKit)
+          );
+
+          return updatedKit;
+        });
+
+        window.dispatchEvent(
+          new CustomEvent(
+            "eunoia-kit-updated",
+            {
+              detail: {
+                action: "remove",
+                product,
+              },
+            }
+          )
+        );
+
+        return;
+      }
+
+      /*
+       * =====================================================
+       * ADD TO KIT
+       * =====================================================
+       */
+
+      await saveProduct(user.id, {
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        category: product.category,
+        shade: product.shade,
+        price: product.price,
+
+        imageUrl:
+          product.imageUrl ||
+          product.image ||
+          "",
+      });
+
+      setKit((currentKit) => {
+        const updatedKit = [
           ...currentKit,
           product,
         ];
-      }
 
-      localStorage.setItem(
-        KIT_KEY,
-        JSON.stringify(updatedKit)
-      );
+        localStorage.setItem(
+          KIT_KEY,
+          JSON.stringify(updatedKit)
+        );
+
+        return updatedKit;
+      });
 
       window.dispatchEvent(
         new CustomEvent(
           "eunoia-kit-updated",
           {
             detail: {
-              action: alreadyAdded
-                ? "remove"
-                : "add",
+              action: "add",
               product,
             },
           }
         )
       );
-
-      return updatedKit;
-    });
+    } catch (error) {
+      console.error(
+        "Failed to update kit:",
+        error
+      );
+    }
   }
+
+  /*
+   * =========================================================
+   * CHECK IF PRODUCT IS IN KIT
+   * =========================================================
+   */
 
   function isInKit(product) {
     return kit.some(
-      (item) => item.id === product.id
+      (item) =>
+        item.id === product.id
     );
   }
 
@@ -209,6 +422,7 @@ export default function ShadeMatch() {
       ================================================== */}
 
       <section className="border-b border-[#d8d3cd]">
+
         <div className="mx-auto max-w-[1500px] px-6 pb-24 pt-20 md:px-10 md:pb-32 md:pt-24 lg:px-12">
 
           <div className="max-w-5xl">
@@ -218,26 +432,31 @@ export default function ShadeMatch() {
             </p>
 
             <h1 className="text-[clamp(3.8rem,8vw,8.5rem)] font-light leading-[0.86] tracking-[-0.06em]">
+
               Find your
               <br />
 
               <span className="italic">
                 shade elsewhere.
               </span>
+
             </h1>
 
             <p className="mt-10 max-w-2xl text-base leading-8 text-[#68635e] md:text-lg">
+
               Already know a shade you love?
               EUNOIA translates it across
               brands using depth and
               undertone — so you can discover
               your closest match without
               starting from zero.
+
             </p>
 
           </div>
 
         </div>
+
       </section>
 
 
@@ -320,6 +539,7 @@ export default function ShadeMatch() {
                     {item.label}
                   </button>
                 );
+
               })}
 
             </div>
@@ -766,6 +986,7 @@ export default function ShadeMatch() {
                         </div>
 
                         <div className="mt-1 text-5xl font-light tracking-[-0.06em]">
+
                           {Math.round(
                             matches[0]
                               .matchScore ??
@@ -775,6 +996,7 @@ export default function ShadeMatch() {
                           <span className="text-xl">
                             %
                           </span>
+
                         </div>
 
                       </div>
