@@ -1,98 +1,171 @@
 import {
   ArrowLeft,
   ArrowRight,
-  Camera,
+  Sparkles,
+  ScanFace,
   Palette,
   ShoppingBag,
-  Sparkles,
 } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
+
+
 
 export default function About() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
+    <div
+      className="
+        min-h-screen
+        bg-[#f7f5f2]
+        text-[#111111]
+      "
+    >
 
-      {/* HEADER */}
-      <header className="border-b border-[#d8d3cd] bg-[#f7f5f2]">
-        <div className="flex items-center justify-between px-6 py-5 md:px-10">
+      {/* =====================================================
+          NAVIGATION
+      ===================================================== */}
+
+    
+
+
+      {/* =====================================================
+          HERO
+      ===================================================== */}
+
+      <section
+        className="
+          relative
+          min-h-[680px]
+          overflow-hidden
+          bg-black
+          text-white
+          md:min-h-[760px]
+        "
+      >
+
+        {/* BACKGROUND */}
+
+        <div
+          className="
+            absolute
+            inset-0
+            bg-gradient-to-r
+            from-black
+            via-black/90
+            to-black/60
+          "
+        />
+
+
+        {/* CONTENT */}
+
+        <div
+          className="
+            relative
+            z-10
+            mx-auto
+            flex
+            min-h-[680px]
+            max-w-[1500px]
+            flex-col
+            justify-center
+            px-6
+            pt-28
+            md:min-h-[760px]
+            md:px-10
+          "
+        >
+
+          {/* BACK */}
 
           <button
             onClick={() => navigate("/")}
-            className="text-2xl font-light tracking-[0.35em]"
+            className="
+              mb-20
+              flex
+              w-fit
+              items-center
+              gap-3
+              text-xs
+              font-bold
+              uppercase
+              tracking-[0.2em]
+              text-white/60
+              transition
+              hover:text-white
+            "
           >
-            EUNOIA
-          </button>
 
-          <nav className="hidden items-center gap-8 text-xs font-medium uppercase tracking-[0.15em] md:flex">
-            <button
-              onClick={() => navigate("/")}
-              className="transition-opacity hover:opacity-50"
-            >
-              Home
-            </button>
+            <ArrowLeft
+              size={16}
+              strokeWidth={1.5}
+            />
 
-            <button
-              onClick={() => navigate("/scan")}
-              className="transition-opacity hover:opacity-50"
-            >
-              AI Scan
-            </button>
-
-            <button
-              onClick={() => navigate("/shade-match")}
-              className="transition-opacity hover:opacity-50"
-            >
-              Shade Match
-            </button>
-
-            <span className="border-b border-black pb-1">
-              About
-            </span>
-          </nav>
-
-          <button
-            onClick={() => navigate("/kit")}
-            aria-label="Shopping bag"
-            className="transition-opacity hover:opacity-50"
-          >
-            <ShoppingBag size={19} strokeWidth={1.5} />
-          </button>
-
-        </div>
-      </header>
-
-
-      {/* HERO */}
-      <section className="bg-black px-6 py-24 text-white md:px-12 md:py-32">
-
-        <div className="mx-auto max-w-7xl">
-
-          <button
-            onClick={() => navigate("/")}
-            className="mb-16 flex items-center gap-3 text-xs uppercase tracking-[0.2em] text-white/60 transition hover:text-white"
-          >
-            <ArrowLeft size={15} />
             Back home
+
           </button>
 
-          <p className="text-xs font-medium uppercase tracking-[0.35em] text-white/50">
+
+          {/* LABEL */}
+
+          <p
+            className="
+              mb-7
+              text-xs
+              font-bold
+              uppercase
+              tracking-[0.35em]
+              text-white/60
+            "
+          >
             About EUNOIA
           </p>
 
-          <h1 className="mt-7 max-w-5xl text-6xl font-semibold uppercase leading-[0.9] tracking-[-0.05em] md:text-8xl">
+
+          {/* TITLE */}
+
+          <h1
+            className="
+              max-w-5xl
+              text-6xl
+              font-semibold
+              uppercase
+              leading-[0.87]
+              tracking-[-0.05em]
+              md:text-8xl
+              lg:text-[9rem]
+            "
+          >
             Makeup
+
             <br />
+
             that makes
+
             <br />
+
             sense.
           </h1>
 
-          <p className="mt-10 max-w-2xl text-base leading-7 text-white/65 md:text-lg">
-            EUNOIA is an AI-powered personalized beauty assistant designed
-            to make finding makeup that works for you simpler, faster
-            and more personal.
+
+          {/* DESCRIPTION */}
+
+          <p
+            className="
+              mt-10
+              max-w-xl
+              text-base
+              leading-7
+              text-white/65
+              md:text-lg
+            "
+          >
+            EUNOIA brings together facial analysis,
+            shade intelligence and product discovery
+            to make finding makeup feel less like
+            guesswork and more like a match.
           </p>
 
         </div>
@@ -100,281 +173,103 @@ export default function About() {
       </section>
 
 
-      {/* WHAT IS EUNOIA */}
-      <section className="px-6 py-24 md:px-12 md:py-32">
+      {/* =====================================================
+          INTRODUCTION
+      ===================================================== */}
 
-        <div className="mx-auto max-w-7xl">
+      <section
+        className="
+          px-6
+          py-24
+          md:px-10
+          md:py-32
+        "
+      >
 
-          <div className="grid gap-16 md:grid-cols-12">
+        <div
+          className="
+            mx-auto
+            max-w-[1500px]
+          "
+        >
 
-            <div className="md:col-span-5">
-
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#77716b]">
-                01 / The idea
-              </p>
-
-              <h2 className="mt-6 text-4xl font-semibold uppercase leading-[0.95] tracking-[-0.03em] md:text-6xl">
-                Beauty
-                <br />
-                should not
-                <br />
-                be guesswork.
-              </h2>
-
-            </div>
-
-            <div className="md:col-span-6 md:col-start-7">
-
-              <p className="text-lg leading-8 text-[#514b46]">
-                Choosing makeup can mean comparing hundreds of shades,
-                brands and products without knowing what will actually
-                work for you.
-              </p>
-
-              <p className="mt-7 text-base leading-7 text-[#77716b]">
-                EUNOIA brings those decisions into one personalized
-                experience. It combines facial analysis, skin profiling,
-                preferences and product information to help you discover
-                products suited to you.
-              </p>
-
-              <p className="mt-7 text-base leading-7 text-[#77716b]">
-                Instead of searching through endless products, you start
-                with yourself — your skin, your preferences, your budget
-                and your desired look.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* HOW IT WORKS */}
-      <section className="border-y border-[#d8d3cd] bg-[#e8dfd7] px-6 py-24 md:px-12 md:py-32">
-
-        <div className="mx-auto max-w-7xl">
-
-          <div className="mb-16">
-
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#716960]">
-              02 / How it works
-            </p>
-
-            <h2 className="mt-5 max-w-3xl text-5xl font-semibold uppercase leading-[0.95] tracking-[-0.04em] md:text-7xl">
-              From scan
-              <br />
-              to match.
-            </h2>
-
-          </div>
-
-
-          <div className="grid border-t border-[#cfc5bc] md:grid-cols-3">
-
-            {/* STEP 1 */}
-            <div className="border-b border-[#cfc5bc] py-10 md:border-b-0 md:border-r md:pr-10">
-
-              <div className="flex items-start justify-between">
-
-                <Camera
-                  size={27}
-                  strokeWidth={1.3}
-                />
-
-                <span className="text-xs text-[#8a8179]">
-                  01
-                </span>
-
-              </div>
-
-              <h3 className="mt-14 text-xl font-semibold uppercase">
-                Scan
-              </h3>
-
-              <p className="mt-4 text-sm leading-6 text-[#6c625b]">
-                Take a quick photo in good lighting. EUNOIA analyzes
-                your facial and skin characteristics to create your
-                starting profile.
-              </p>
-
-            </div>
-
-
-            {/* STEP 2 */}
-            <div className="border-b border-[#cfc5bc] py-10 md:border-b-0 md:border-r md:px-10">
-
-              <div className="flex items-start justify-between">
-
-                <Sparkles
-                  size={27}
-                  strokeWidth={1.3}
-                />
-
-                <span className="text-xs text-[#8a8179]">
-                  02
-                </span>
-
-              </div>
-
-              <h3 className="mt-14 text-xl font-semibold uppercase">
-                Discover
-              </h3>
-
-              <p className="mt-4 text-sm leading-6 text-[#6c625b]">
-                Tell us about your skin type, preferred look, budget
-                and brands. Your preferences help personalize the
-                recommendations.
-              </p>
-
-            </div>
-
-
-            {/* STEP 3 */}
-            <div className="py-10 md:pl-10">
-
-              <div className="flex items-start justify-between">
-
-                <Palette
-                  size={27}
-                  strokeWidth={1.3}
-                />
-
-                <span className="text-xs text-[#8a8179]">
-                  03
-                </span>
-
-              </div>
-
-              <h3 className="mt-14 text-xl font-semibold uppercase">
-                Match
-              </h3>
-
-              <p className="mt-4 text-sm leading-6 text-[#6c625b]">
-                EUNOIA compares your profile with products across
-                brands and ranks the shades and products that best
-                fit your profile.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      {/* SHADE MATCH */}
-      <section className="bg-black px-6 py-24 text-white md:px-12 md:py-28">
-
-        <div className="mx-auto flex max-w-7xl flex-col gap-10 md:flex-row md:items-end md:justify-between">
-
-          <div>
-
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/45">
-              Cross-brand matching
-            </p>
-
-            <h2 className="mt-5 max-w-3xl text-5xl font-semibold uppercase leading-[0.95] tracking-[-0.04em] md:text-7xl">
-              Already have
-              <br />
-              a shade you love?
-            </h2>
-
-            <p className="mt-7 max-w-xl text-base leading-7 text-white/60">
-              Enter a product you already use and discover the closest
-              available shade in another brand.
-            </p>
-
-          </div>
-
-          <button
-            onClick={() => navigate("/shade-match")}
-            className="flex w-fit items-center gap-4 rounded-full bg-white px-7 py-4 text-sm font-semibold uppercase tracking-[0.08em] text-black transition hover:bg-[#e8e4df]"
+          <div
+            className="
+              grid
+              gap-14
+              md:grid-cols-12
+            "
           >
-            Explore shade match
-            <ArrowRight size={18} />
-          </button>
 
-        </div>
+            <div className="md:col-span-7">
 
-      </section>
-
-
-      {/* OUR APPROACH */}
-      <section className="px-6 py-24 md:px-12 md:py-32">
-
-        <div className="mx-auto max-w-7xl">
-
-          <div className="grid gap-16 md:grid-cols-12">
-
-            <div className="md:col-span-4">
-
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#77716b]">
-                03 / Our approach
+              <p
+                className="
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-[0.3em]
+                  text-[#817971]
+                "
+              >
+                Why EUNOIA
               </p>
 
-              <h2 className="mt-6 text-4xl font-semibold uppercase leading-[0.95] tracking-[-0.03em] md:text-5xl">
-                Personal.
+
+              <h2
+                className="
+                  mt-6
+                  max-w-4xl
+                  text-4xl
+                  font-semibold
+                  uppercase
+                  leading-[0.95]
+                  tracking-[-0.04em]
+                  md:text-6xl
+                "
+              >
+                Beauty should
                 <br />
-                Practical.
-                <br />
-                Inclusive.
+                feel personal.
               </h2>
 
             </div>
 
 
-            <div className="md:col-span-7 md:col-start-6">
+            <div
+              className="
+                md:col-span-4
+                md:col-start-9
+              "
+            >
 
-              <div className="border-t border-[#d8d3cd]">
-
-                <div className="border-b border-[#d8d3cd] py-8">
-
-                  <h3 className="text-lg font-semibold uppercase">
-                    Personal
-                  </h3>
-
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#6c6660]">
-                    Recommendations are based on the individual rather
-                    than treating every user the same.
-                  </p>
-
-                </div>
-
-
-                <div className="border-b border-[#d8d3cd] py-8">
-
-                  <h3 className="text-lg font-semibold uppercase">
-                    Practical
-                  </h3>
-
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#6c6660]">
-                    Budget, preferred brands and product categories
-                    are part of the recommendation process.
-                  </p>
-
-                </div>
+              <p
+                className="
+                  text-base
+                  leading-7
+                  text-[#5f5954]
+                "
+              >
+                Choosing makeup can mean comparing
+                hundreds of shades, brands and formulas.
+                EUNOIA simplifies that process by using
+                your own features and preferences to
+                narrow everything down.
+              </p>
 
 
-                <div className="border-b border-[#d8d3cd] py-8">
-
-                  <h3 className="text-lg font-semibold uppercase">
-                    Inclusive
-                  </h3>
-
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-[#6c6660]">
-                    EUNOIA is designed to work across different skin
-                    depths, undertones, preferences and budgets.
-                  </p>
-
-                </div>
-
-              </div>
+              <p
+                className="
+                  mt-6
+                  text-base
+                  leading-7
+                  text-[#5f5954]
+                "
+              >
+                Instead of asking you to adapt to
+                makeup, EUNOIA is designed to help
+                makeup adapt to you.
+              </p>
 
             </div>
 
@@ -385,57 +280,345 @@ export default function About() {
       </section>
 
 
-      {/* FINAL CTA */}
-      <section className="bg-[#f0ebe6] px-6 py-24 md:px-12 md:py-32">
+      {/* =====================================================
+          THREE PILLARS
+      ===================================================== */}
 
-        <div className="mx-auto max-w-7xl text-center">
+      <section
+        className="
+          border-y
+          border-[#d8d3cd]
+          bg-[#ebe3dc]
+          px-6
+          md:px-10
+        "
+      >
 
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#716960]">
-            Your beauty profile starts here
-          </p>
+        <div
+          className="
+            mx-auto
+            grid
+            max-w-[1500px]
+            md:grid-cols-3
+          "
+        >
 
-          <h2 className="mx-auto mt-6 max-w-4xl text-5xl font-semibold uppercase leading-[0.95] tracking-[-0.04em] md:text-7xl">
-            Find makeup
-            <br />
-            that fits you.
-          </h2>
+          {/* 01 */}
 
-          <button
-            onClick={() => navigate("/scan")}
-            className="mx-auto mt-9 flex items-center gap-4 rounded-full bg-black px-8 py-4 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#292929]"
+          <div
+            className="
+              border-b
+              border-[#d8d3cd]
+              px-0
+              py-12
+              md:border-b-0
+              md:border-r
+              md:px-10
+              md:py-16
+              md:first:pl-0
+            "
           >
-            Start your Eunoia scan
-            <ArrowRight size={18} />
-          </button>
+
+            <div
+              className="
+                flex
+                items-start
+                justify-between
+              "
+            >
+
+              <ScanFace
+                size={28}
+                strokeWidth={1.3}
+              />
+
+              <span
+                className="
+                  text-xs
+                  font-semibold
+                  text-[#817971]
+                "
+              >
+                01
+              </span>
+
+            </div>
+
+
+            <h3
+              className="
+                mt-16
+                text-2xl
+                font-semibold
+                uppercase
+              "
+            >
+              Understand
+            </h3>
+
+
+            <p
+              className="
+                mt-4
+                text-sm
+                leading-6
+                text-[#6c655f]
+              "
+            >
+              Analyse your facial features and
+              skin characteristics to build a
+              personalised beauty profile.
+            </p>
+
+          </div>
+
+
+          {/* 02 */}
+
+          <div
+            className="
+              border-b
+              border-[#d8d3cd]
+              px-0
+              py-12
+              md:border-b-0
+              md:border-r
+              md:px-10
+              md:py-16
+            "
+          >
+
+            <div
+              className="
+                flex
+                items-start
+                justify-between
+              "
+            >
+
+              <Palette
+                size={28}
+                strokeWidth={1.3}
+              />
+
+              <span
+                className="
+                  text-xs
+                  font-semibold
+                  text-[#817971]
+                "
+              >
+                02
+              </span>
+
+            </div>
+
+
+            <h3
+              className="
+                mt-16
+                text-2xl
+                font-semibold
+                uppercase
+              "
+            >
+              Match
+            </h3>
+
+
+            <p
+              className="
+                mt-4
+                text-sm
+                leading-6
+                text-[#6c655f]
+              "
+            >
+              Connect your complexion, undertone
+              and preferences with products and
+              shades from different brands.
+            </p>
+
+          </div>
+
+
+          {/* 03 */}
+
+          <div
+            className="
+              px-0
+              py-12
+              md:px-10
+              md:py-16
+              md:last:pr-0
+            "
+          >
+
+            <div
+              className="
+                flex
+                items-start
+                justify-between
+              "
+            >
+
+              <ShoppingBag
+                size={28}
+                strokeWidth={1.3}
+              />
+
+              <span
+                className="
+                  text-xs
+                  font-semibold
+                  text-[#817971]
+                "
+              >
+                03
+              </span>
+
+            </div>
+
+
+            <h3
+              className="
+                mt-16
+                text-2xl
+                font-semibold
+                uppercase
+              "
+            >
+              Discover
+            </h3>
+
+
+            <p
+              className="
+                mt-4
+                text-sm
+                leading-6
+                text-[#6c655f]
+              "
+            >
+              Save products you love, build your
+              personal kit and discover beauty
+              without endless trial and error.
+            </p>
+
+          </div>
 
         </div>
 
       </section>
 
 
-      {/* FOOTER */}
-      <footer className="bg-black px-6 py-8 text-white md:px-12">
+      {/* =====================================================
+          CTA
+      ===================================================== */}
 
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <section
+        className="
+          bg-[#f7f5f2]
+          px-6
+          py-24
+          md:px-10
+          md:py-32
+        "
+      >
 
-          <button
-            onClick={() => navigate("/")}
-            className="text-xl font-light tracking-[0.35em]"
+        <div
+          className="
+            mx-auto
+            max-w-[1500px]
+          "
+        >
+
+          <div
+            className="
+              flex
+              flex-col
+              gap-8
+              md:flex-row
+              md:items-end
+              md:justify-between
+            "
           >
-            EUNOIA
-          </button>
 
-          <p className="text-xs text-white/50">
-            AI-powered personalized beauty
-          </p>
+            <div>
 
-          <p className="text-xs text-white/40">
-            © 2026 Eunoia
-          </p>
+              <p
+                className="
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-[0.3em]
+                  text-[#817971]
+                "
+              >
+                Your beauty profile
+              </p>
+
+
+              <h2
+                className="
+                  mt-5
+                  max-w-4xl
+                  text-5xl
+                  font-semibold
+                  uppercase
+                  leading-[0.92]
+                  tracking-[-0.04em]
+                  md:text-7xl
+                "
+              >
+                Find what
+                <br />
+                fits you.
+              </h2>
+
+            </div>
+
+
+            <button
+              onClick={() => navigate("/scan")}
+              className="
+                flex
+                w-fit
+                items-center
+                gap-4
+                bg-black
+                px-7
+                py-4
+                text-sm
+                font-bold
+                uppercase
+                tracking-[0.1em]
+                text-white
+                transition
+                hover:bg-[#292929]
+              "
+            >
+
+              Start your scan
+
+              <ArrowRight
+                size={18}
+              />
+
+            </button>
+
+          </div>
 
         </div>
 
-      </footer>
+      </section>
+
+
+      {/* =====================================================
+          FOOTER
+      ===================================================== */}
+
+    
 
     </div>
   );

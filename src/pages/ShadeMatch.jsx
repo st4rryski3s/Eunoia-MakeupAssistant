@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, ShoppingBag } from "lucide-react";
 
-import EunoiaNav from "../components/EunoiaNav";
 import productImages from "../productImages";
 
 import {
@@ -204,8 +203,6 @@ export default function ShadeMatch() {
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
-
-      <EunoiaNav />
 
       {/* ==================================================
           HERO
@@ -1341,40 +1338,6 @@ export default function ShadeMatch() {
         </div>
 
       </section>
-
-
-      {/* ==================================================
-          FOOTER
-      ================================================== */}
-
-      <footer className="bg-[#111111] text-white">
-
-        <div className="mx-auto max-w-[1500px] px-6 py-14 md:px-10 md:py-16 lg:px-12">
-
-          <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
-
-            <div>
-
-              <p className="text-2xl font-light tracking-[0.3em]">
-                EUNOIA
-              </p>
-
-              <p className="mt-4 max-w-sm text-xs leading-6 text-white/55">
-                Personalized beauty,
-                translated through intelligence.
-              </p>
-
-            </div>
-
-            <p className="text-[9px] uppercase tracking-[0.2em] text-white/40">
-              AI-powered beauty intelligence
-            </p>
-
-          </div>
-
-        </div>
-
-      </footer>
 
     </div>
   );

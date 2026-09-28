@@ -1,5 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  Link,
+  useLocation,
+} from "react-router-dom";
+
 import {
   Menu,
   ShoppingBag,
@@ -21,7 +30,9 @@ function getKitCount() {
 
     const parsed = JSON.parse(saved);
 
-    return Array.isArray(parsed) ? parsed.length : 0;
+    return Array.isArray(parsed)
+      ? parsed.length
+      : 0;
   } catch {
     return 0;
   }
@@ -34,12 +45,20 @@ export default function EunoiaNav({
 }) {
   const location = useLocation();
 
-  const [kitCount, setKitCount] = useState(getKitCount);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [basketPopping, setBasketPopping] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
+  const [kitCount, setKitCount] =
+    useState(getKitCount);
 
-  const animationTimer = useRef(null);
+  const [menuOpen, setMenuOpen] =
+    useState(false);
+
+  const [basketPopping, setBasketPopping] =
+    useState(false);
+
+  const [loggingOut, setLoggingOut] =
+    useState(false);
+
+  const animationTimer =
+    useRef(null);
 
   useEffect(() => {
     const handleKitUpdate = (event) => {
@@ -55,24 +74,27 @@ export default function EunoiaNav({
           setBasketPopping(true);
 
           if (animationTimer.current) {
-            clearTimeout(animationTimer.current);
+            clearTimeout(
+              animationTimer.current
+            );
           }
 
-          animationTimer.current = setTimeout(() => {
-            setBasketPopping(false);
-          }, 700);
+          animationTimer.current =
+            setTimeout(() => {
+              setBasketPopping(false);
+            }, 700);
         });
       }
+    };
+
+    const handleStorage = () => {
+      setKitCount(getKitCount());
     };
 
     window.addEventListener(
       "eunoia-kit-updated",
       handleKitUpdate
     );
-
-    const handleStorage = () => {
-      setKitCount(getKitCount());
-    };
 
     window.addEventListener(
       "storage",
@@ -93,7 +115,9 @@ export default function EunoiaNav({
       );
 
       if (animationTimer.current) {
-        clearTimeout(animationTimer.current);
+        clearTimeout(
+          animationTimer.current
+        );
       }
     };
   }, [
@@ -106,7 +130,9 @@ export default function EunoiaNav({
   }, [location.pathname]);
 
   const handleLogout = async () => {
-    if (loggingOut) return;
+    if (loggingOut) {
+      return;
+    }
 
     setLoggingOut(true);
 
@@ -121,12 +147,11 @@ export default function EunoiaNav({
         );
 
         setLoggingOut(false);
+
         return;
       }
 
-      // Make sure the user cannot remain
-      // on a protected page after logout.
-      window.location.href = "/login";
+      window.location.href = "/";
     } catch (error) {
       console.error(
         "Unexpected logout error:",
@@ -168,12 +193,12 @@ export default function EunoiaNav({
     <>
       <header
         className={`
+          eunoia-global-nav
           ${
             overlay
               ? "absolute"
               : "relative"
           }
-
           left-0
           right-0
           top-0
@@ -189,10 +214,10 @@ export default function EunoiaNav({
               absolute
               inset-x-0
               top-0
-              h-32
+              h-40
               bg-gradient-to-b
-              from-black/55
-              via-black/20
+              from-black/60
+              via-black/25
               to-transparent
             "
           />
@@ -203,7 +228,7 @@ export default function EunoiaNav({
             relative
             mx-auto
             flex
-            h-[82px]
+            h-[96px]
             max-w-[1500px]
             items-center
             justify-between
@@ -211,21 +236,49 @@ export default function EunoiaNav({
             md:px-10
           "
         >
-          {/* LOGO */}
+          {/* LOGO + EUNOIA */}
           <Link
             to="/"
             className="
-              eunoia-logo
-              text-xl
-              font-light
-              tracking-[0.34em]
-              md:text-2xl
+              flex
+              shrink-0
+              items-center
+              gap-4
+              transition
+              duration-300
+              hover:opacity-80
             "
+            aria-label="EUNOIA home"
           >
-            EUNOIA
+            {/* YOUR ACTUAL LOGO IMAGE */}
+            <img
+              src="/eunoia-logo.png"
+              alt=""
+              aria-hidden="true"
+              className="
+                h-14
+                w-auto
+                object-contain
+                md:h-16
+              "
+            />
+
+            {/* TYPED EUNOIA */}
+            <span
+              className="
+                eunoia-logo
+                text-2xl
+                font-light
+                leading-none
+                tracking-[0.34em]
+                md:text-3xl
+              "
+            >
+              EUNOIA
+            </span>
           </Link>
 
-          {/* DESKTOP NAVIGATION */}
+          {/* DESKTOP NAV */}
           <nav
             className="
               hidden
@@ -252,15 +305,30 @@ export default function EunoiaNav({
                     font-semibold
                     uppercase
                     tracking-[0.15em]
-
+                    transition
+                    duration-300
+                    hover:opacity-100
                     ${
                       active
                         ? "opacity-100"
-                        : "opacity-65"
+                        : "opacity-60"
                     }
                   `}
                 >
                   {link.label}
+
+                  {active && (
+                    <span
+                      className="
+                        absolute
+                        bottom-0
+                        left-0
+                        h-px
+                        w-full
+                        bg-current
+                      "
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -278,22 +346,32 @@ export default function EunoiaNav({
             {/* MY KIT */}
             <Link
               to="/kit"
-              className="
-                eunoia-my-kit
+              className={`
                 flex
                 h-10
                 items-center
                 gap-2
                 border
-                border-white/40
                 px-3
-                text-white
                 transition
                 duration-300
-                hover:bg-white
-                hover:text-[#111111]
                 md:px-4
-              "
+                ${
+                  dark
+                    ? `
+                      border-white/40
+                      text-white
+                      hover:bg-white
+                      hover:text-[#111111]
+                    `
+                    : `
+                      border-black/15
+                      text-[#111111]
+                      hover:bg-[#111111]
+                      hover:text-white
+                    `
+                }
+              `}
             >
               <ShoppingBag
                 size={17}
@@ -314,19 +392,22 @@ export default function EunoiaNav({
               </span>
 
               <span
-                className="
+                className={`
                   flex
                   h-5
                   min-w-5
                   items-center
                   justify-center
                   rounded-full
-                  bg-white
                   px-1
                   text-[9px]
                   font-bold
-                  text-[#111111]
-                "
+                  ${
+                    dark
+                      ? "bg-white text-[#111111]"
+                      : "bg-[#111111] text-white"
+                  }
+                `}
               >
                 {kitCount}
               </span>
@@ -337,27 +418,38 @@ export default function EunoiaNav({
               type="button"
               onClick={handleLogout}
               disabled={loggingOut}
-              className="
+              className={`
                 hidden
                 h-10
                 items-center
                 gap-2
                 border
-                border-white/40
                 px-4
                 text-[10px]
                 font-semibold
                 uppercase
                 tracking-[0.15em]
-                text-white
                 transition
                 duration-300
-                hover:bg-white
-                hover:text-[#111111]
                 disabled:cursor-wait
                 disabled:opacity-50
                 md:flex
-              "
+                ${
+                  dark
+                    ? `
+                      border-white/40
+                      text-white
+                      hover:bg-white
+                      hover:text-[#111111]
+                    `
+                    : `
+                      border-black/15
+                      text-[#111111]
+                      hover:bg-[#111111]
+                      hover:text-white
+                    `
+                }
+              `}
             >
               <LogOut
                 size={16}
@@ -369,7 +461,7 @@ export default function EunoiaNav({
                 : "Log Out"}
             </button>
 
-            {/* MOBILE MENU BUTTON */}
+            {/* MOBILE MENU */}
             <button
               type="button"
               onClick={() =>
@@ -402,11 +494,12 @@ export default function EunoiaNav({
             className="
               relative
               border-t
-              border-white/15
+              border-black/10
               bg-[#f7f5f2]
               px-6
               py-5
               text-[#111111]
+              shadow-lg
               md:hidden
             "
           >
@@ -429,7 +522,6 @@ export default function EunoiaNav({
               </Link>
             ))}
 
-            {/* MOBILE LOGOUT */}
             <button
               type="button"
               onClick={handleLogout}
@@ -447,8 +539,6 @@ export default function EunoiaNav({
                 font-semibold
                 uppercase
                 tracking-[0.2em]
-                text-[#111111]
-                disabled:opacity-50
               "
             >
               <LogOut
@@ -464,7 +554,7 @@ export default function EunoiaNav({
         )}
       </header>
 
-      {/* FLOATING KIT BASKET */}
+      {/* FLOATING BASKET */}
       {showFloatingBasket && (
         <Link
           to="/kit"
@@ -486,7 +576,6 @@ export default function EunoiaNav({
             shadow-[0_12px_35px_rgba(0,0,0,0.22)]
             md:right-7
             lg:right-9
-
             ${
               basketPopping
                 ? "floating-basket-pop"
@@ -504,24 +593,17 @@ export default function EunoiaNav({
             "
           />
 
-          <span
+          <ShoppingBag
+            size={23}
+            strokeWidth={1.6}
             className="
               relative
               z-10
-              flex
-              items-center
-              justify-center
             "
-          >
-            <ShoppingBag
-              size={23}
-              strokeWidth={1.6}
-            />
-          </span>
+          />
 
           <span
             className={`
-              floating-basket-count
               absolute
               -right-1
               -top-1
@@ -539,7 +621,6 @@ export default function EunoiaNav({
               text-[10px]
               font-bold
               text-white
-
               ${
                 basketPopping
                   ? "basket-count-pop"

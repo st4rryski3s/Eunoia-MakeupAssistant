@@ -9,7 +9,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import EunoiaNav from "../components/EunoiaNav";
+
 import productImages from "../productImages";
 
 import { supabase } from "../lib/supabase";
@@ -340,7 +340,7 @@ export default function KitBuilder() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
-        <EunoiaNav />
+       
 
         <main className="flex min-h-[70vh] items-center justify-center px-6">
           <div className="text-center">
@@ -363,14 +363,7 @@ export default function KitBuilder() {
 
   return (
     <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
-
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
-
-      <EunoiaNav />
-
-      {/* =====================================================
+{/* =====================================================
           MAIN
       ===================================================== */}
 
@@ -816,25 +809,6 @@ export default function KitBuilder() {
 
       </main>
 
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-
-      <footer className="border-t border-black/10 bg-[#111111] px-6 py-10 text-white md:px-10">
-
-        <div className="mx-auto flex max-w-[1500px] flex-col gap-5 md:flex-row md:items-center md:justify-between">
-
-          <p className="text-xl font-light tracking-[0.35em]">
-            EUNOIA
-          </p>
-
-          <p className="text-xs text-white/45">
-            AI-powered personalised beauty
-          </p>
-
-        </div>
-
-      </footer>
 
     </div>
   );

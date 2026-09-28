@@ -786,3 +786,189 @@ img {
     transition-duration: 0.01ms !important;
   }
 }
+/* =====================================================
+   EUNOIA GLOBAL SITE SHELL
+===================================================== */
+
+.eunoia-site {
+  min-height: 100vh;
+  width: 100%;
+}
+
+
+/*
+   Every normal page now receives its header and footer
+   from EunoiaLayout.
+
+   These rules hide the older page-specific headers
+   and footers that were previously built directly
+   inside individual pages.
+*/
+
+.eunoia-page-content > div > header:not(.eunoia-global-nav),
+.eunoia-page-content > div > footer:not(.eunoia-global-footer) {
+  display: none !important;
+}
+
+
+/*
+   Some older pages have the header/footer one level
+   deeper. These selectors handle those versions too.
+*/
+
+.eunoia-page-content header:not(.eunoia-global-nav) {
+  display: none !important;
+}
+
+.eunoia-page-content footer:not(.eunoia-global-footer) {
+  display: none !important;
+}
+
+
+/* =====================================================
+   GLOBAL LOGO SIZING
+
+   HEADER + FOOTER USE THE SAME TYPOGRAPHY.
+===================================================== */
+
+.eunoia-logo {
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: 0.34em;
+}
+
+@media (min-width: 768px) {
+  .eunoia-logo {
+    font-size: 2.25rem;
+  }
+}
+
+
+/* =====================================================
+   FOOTER LOGO
+===================================================== */
+
+.eunoia-global-footer a:first-child {
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: 0.34em;
+}
+
+@media (min-width: 768px) {
+  .eunoia-global-footer a:first-child {
+    font-size: 2.25rem;
+  }
+}
+
+
+/* =====================================================
+   GLOBAL PAGE TRANSITION
+===================================================== */
+
+.eunoia-page-content {
+  min-height: 0;
+}
+/* =========================================================
+   EUNOIA GLOBAL SITE SHELL
+========================================================= */
+
+.eunoia-site {
+  min-height: 100vh;
+  width: 100%;
+}
+
+
+/* =========================================================
+   GLOBAL HEADER
+========================================================= */
+
+.eunoia-global-nav {
+  width: 100%;
+}
+
+
+/* =========================================================
+   GLOBAL FOOTER
+========================================================= */
+
+.eunoia-global-footer {
+  width: 100%;
+}
+
+
+/* =========================================================
+   GLOBAL PAGE CONTENT
+========================================================= */
+
+.eunoia-page-content {
+  width: 100%;
+}
+
+
+/* =========================================================
+   GLOBAL BRAND
+========================================================= */
+
+.eunoia-global-nav .eunoia-logo,
+.eunoia-global-footer .eunoia-logo {
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: 0.34em;
+}
+
+@media (min-width: 768px) {
+  .eunoia-global-nav .eunoia-logo,
+  .eunoia-global-footer .eunoia-logo {
+    font-size: 2.25rem;
+  }
+}
+
+
+/* =========================================================
+   HERO SCAN BUTTON
+========================================================= */
+
+.eunoia-scan-button {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid #ffffff !important;
+
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.eunoia-scan-button:hover {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 30px
+    rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+}

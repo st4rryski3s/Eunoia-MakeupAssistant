@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   BrowserRouter,
   Routes,
@@ -9,6 +13,8 @@ import { supabase } from "./lib/supabase";
 
 import Login from "./components/Auth/Login";
 import Signup from "./components/Auth/Signup";
+
+import EunoiaLayout from "./components/EunoiaLayout";
 
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -21,13 +27,152 @@ import ShadeMatch from "./pages/ShadeMatch";
 import "./App.css";
 
 
+function AuthLoading() {
+  return (
+    <div
+      className="
+        flex
+        min-h-screen
+        items-center
+        justify-center
+        bg-[#f7f5f2]
+        text-[#111111]
+      "
+    >
+      <div className="text-center">
+
+        <p
+          className="
+            text-3xl
+            font-light
+            tracking-[0.34em]
+            md:text-4xl
+          "
+        >
+          EUNOIA
+        </p>
+
+        <p
+          className="
+            mt-5
+            text-xs
+            uppercase
+            tracking-[0.2em]
+            text-black/40
+          "
+        >
+          Loading...
+        </p>
+
+      </div>
+    </div>
+  );
+}
+
+
+function SitePage({
+  children,
+  floatingBasket = false,
+}) {
+  return (
+    <EunoiaLayout
+      floatingBasket={floatingBasket}
+    >
+      {children}
+    </EunoiaLayout>
+  );
+}
+
+
+function AppRoutes() {
+  return (
+    <Routes>
+
+      <Route
+        path="/"
+        element={
+          <SitePage>
+            <Home />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/about"
+        element={
+          <SitePage>
+            <About />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/scan"
+        element={
+          <SitePage>
+            <Scan />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/preferences"
+        element={
+          <SitePage>
+            <Preferences />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/results"
+        element={
+          <SitePage
+            floatingBasket
+          >
+            <Results />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/kit"
+        element={
+          <SitePage>
+            <KitBuilder />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="/shade-match"
+        element={
+          <SitePage
+            floatingBasket
+          >
+            <ShadeMatch />
+          </SitePage>
+        }
+      />
+
+      <Route
+        path="*"
+        element={
+          <SitePage>
+            <Home />
+          </SitePage>
+        }
+      />
+
+    </Routes>
+  );
+}
+
+
 export default function App() {
 
-  /* =========================================================
-     AUTH STATE
-  ========================================================= */
-
-  const [user, setUser] = useState(null);
+  const [user, setUser] =
+    useState(null);
 
   const [authLoading, setAuthLoading] =
     useState(true);
@@ -36,11 +181,8 @@ export default function App() {
     useState(false);
 
 
-  /* =========================================================
-     CHECK EXISTING SESSION
-  ========================================================= */
-
   useEffect(() => {
+
     let mounted = true;
 
 
@@ -49,7 +191,8 @@ export default function App() {
       const {
         data,
         error,
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
 
       if (error) {
@@ -61,21 +204,19 @@ export default function App() {
 
 
       if (mounted) {
+
         setUser(
           data?.session?.user ?? null
         );
 
         setAuthLoading(false);
+
       }
     }
 
 
     getCurrentSession();
 
-
-    /* =======================================================
-       LISTEN FOR LOGIN / LOGOUT
-    ======================================================= */
 
     const {
       data: authListener,
@@ -84,9 +225,11 @@ export default function App() {
         (_event, session) => {
 
           if (mounted) {
+
             setUser(
               session?.user ?? null
             );
+
           }
 
         }
@@ -97,73 +240,19 @@ export default function App() {
 
       mounted = false;
 
-      authListener?.subscription?.unsubscribe();
+      authListener
+        ?.subscription
+        ?.unsubscribe();
 
     };
 
   }, []);
 
 
-  /* =========================================================
-     LOADING SCREEN
-  ========================================================= */
-
   if (authLoading) {
-
-    return (
-      <div
-        className="
-          flex
-          min-h-screen
-          items-center
-          justify-center
-          bg-[#f7f5f2]
-          text-[#111111]
-        "
-      >
-
-        <div className="text-center">
-
-          <p
-            className="
-              text-3xl
-              font-light
-              tracking-[0.35em]
-            "
-          >
-            EUNOIA
-          </p>
-
-          <p
-            className="
-              mt-5
-              text-xs
-              uppercase
-              tracking-[0.2em]
-              text-black/40
-            "
-          >
-            Loading...
-          </p>
-
-        </div>
-
-      </div>
-    );
+    return <AuthLoading />;
   }
 
-
-  /* =========================================================
-     AUTH SCREEN
-     
-     If there is no logged-in user:
-     
-     Login
-       ↓
-     Signup
-     
-     The app itself remains locked until authentication.
-  ========================================================= */
 
   if (!user) {
 
@@ -171,15 +260,12 @@ export default function App() {
 
       return (
         <Signup
-
           onSwitchToLogin={() => {
             setShowSignup(false);
           }}
-
           onSignupSuccess={(newUser) => {
             setUser(newUser);
           }}
-
         />
       );
 
@@ -188,110 +274,21 @@ export default function App() {
 
     return (
       <Login
-
         onSwitchToSignup={() => {
           setShowSignup(true);
         }}
-
         onLoginSuccess={(loggedInUser) => {
           setUser(loggedInUser);
         }}
-
       />
     );
+
   }
 
 
-  /* =========================================================
-     LOGGED-IN APPLICATION
-  ========================================================= */
-
   return (
     <BrowserRouter>
-
-      <Routes>
-
-        {/* =================================================
-            HOME
-        ================================================= */}
-
-        <Route
-          path="/"
-          element={<Home />}
-        />
-
-
-        {/* =================================================
-            AI SKIN SCAN
-        ================================================= */}
-
-        <Route
-          path="/scan"
-          element={<Scan />}
-        />
-
-
-        {/* =================================================
-            USER PREFERENCES
-        ================================================= */}
-
-        <Route
-          path="/preferences"
-          element={<Preferences />}
-        />
-
-
-        {/* =================================================
-            RECOMMENDATIONS
-        ================================================= */}
-
-        <Route
-          path="/results"
-          element={<Results />}
-        />
-
-
-        {/* =================================================
-            MY KIT
-        ================================================= */}
-
-        <Route
-          path="/kit"
-          element={<KitBuilder />}
-        />
-
-
-        {/* =================================================
-            SHADE MATCH
-        ================================================= */}
-
-        <Route
-          path="/shade-match"
-          element={<ShadeMatch />}
-        />
-
-
-        {/* =================================================
-            ABOUT
-        ================================================= */}
-
-        <Route
-          path="/about"
-          element={<About />}
-        />
-
-
-        {/* =================================================
-            FALLBACK
-        ================================================= */}
-
-        <Route
-          path="*"
-          element={<Home />}
-        />
-
-      </Routes>
-
+      <AppRoutes />
     </BrowserRouter>
   );
 }

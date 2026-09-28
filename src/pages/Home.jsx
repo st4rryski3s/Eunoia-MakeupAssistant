@@ -7,8 +7,6 @@ import {
 
 import { useNavigate } from "react-router-dom";
 
-import EunoiaNav from "../components/EunoiaNav";
-
 export default function Home() {
   const navigate = useNavigate();
 
@@ -20,20 +18,23 @@ export default function Home() {
     "KAY BEAUTY",
   ];
 
+  const scrollToExplore = () => {
+    document
+      .getElementById("explore-section")
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  };
+
   return (
-    <div className="min-h-screen bg-[#f7f5f2] text-[#111111]">
-
-      {/* =====================================================
-          NAVIGATION
-      ===================================================== */}
-
-      <EunoiaNav
-        dark={true}
-        overlay={true}
-        showFloatingBasket={false}
-      />
-
-
+    <div
+      className="
+        min-h-screen
+        bg-[#f7f5f2]
+        text-[#111111]
+      "
+    >
       {/* =====================================================
           HERO
       ===================================================== */}
@@ -47,12 +48,11 @@ export default function Home() {
           md:min-h-screen
         "
       >
-
-        {/* Background image */}
+        {/* HERO IMAGE */}
 
         <img
-          src="https://images.unsplash.com/photo-1596704017254-9b121068fb31?auto=format&fit=crop&w=1800&q=85"
-          alt="Beauty portrait"
+          src="/eunoiahero.jpg"
+          alt="EUNOIA beauty"
           className="
             absolute
             inset-0
@@ -63,7 +63,7 @@ export default function Home() {
           "
         />
 
-        {/* Dark overlay */}
+        {/* IMAGE OVERLAY */}
 
         <div
           className="
@@ -76,7 +76,7 @@ export default function Home() {
           "
         />
 
-        {/* Hero content */}
+        {/* HERO CONTENT */}
 
         <div
           className="
@@ -94,14 +94,14 @@ export default function Home() {
             md:px-12
           "
         >
-
           <div
             className="
-              max-w-2xl
+              max-w-3xl
               text-white
               fade-up
             "
           >
+            {/* EYEBROW */}
 
             <p
               className="
@@ -116,6 +116,7 @@ export default function Home() {
               AI-powered beauty intelligence
             </p>
 
+            {/* MAIN HEADING */}
 
             <h1
               className="
@@ -128,7 +129,6 @@ export default function Home() {
                 md:text-8xl
               "
             >
-
               Makeup that
 
               <span className="block">
@@ -138,29 +138,29 @@ export default function Home() {
               <span className="block">
                 fits you.
               </span>
-
             </h1>
 
+            {/* DESCRIPTION */}
 
             <p
               className="
                 mt-8
-                max-w-lg
+                max-w-xl
                 text-base
                 leading-7
                 text-white/80
                 md:text-lg
               "
             >
-              Scan your face, discover your skin profile and
-              get personalized makeup recommendations across
-              brands, budgets and shades.
+              Scan your face, discover your skin profile
+              and get personalized makeup recommendations
+              across brands, budgets and shades.
             </p>
 
-
-            {/* MAIN CTA */}
+            {/* CTA */}
 
             <button
+              type="button"
               onClick={() => navigate("/scan")}
               className="
                 eunoia-scan-button
@@ -184,13 +184,10 @@ export default function Home() {
                 strokeWidth={1.8}
               />
             </button>
-
           </div>
-
         </div>
 
-
-        {/* Bottom hero label */}
+        {/* HERO BOTTOM LABEL */}
 
         <div
           className="
@@ -207,56 +204,66 @@ export default function Home() {
             md:right-12
           "
         >
-
           <div
             className="
-              hidden
               text-xs
               uppercase
               tracking-[0.25em]
               text-white/60
-              md:block
             "
           >
             Beauty intelligence / 01
           </div>
 
+          {/* SCROLL TO EXPLORE */}
 
-          <div
+          <button
+            type="button"
+            onClick={scrollToExplore}
+            aria-label="Scroll to explore"
             className="
-              ml-auto
-              flex
+              group
+              hidden
+              cursor-pointer
               items-center
               gap-3
               text-xs
               uppercase
               tracking-[0.2em]
               text-white/70
+              transition
+              duration-300
+              hover:text-white
+              md:flex
             "
           >
-            Scroll to explore
+            <span>
+              Scroll to explore
+            </span>
 
             <span
               className="
                 h-px
                 w-10
                 bg-white/50
+                transition-all
+                duration-300
+                group-hover:w-14
+                group-hover:bg-white
               "
             />
-
-          </div>
-
+          </button>
         </div>
-
       </section>
-
 
       {/* =====================================================
           INTRODUCTION
       ===================================================== */}
 
       <section
+        id="explore-section"
         className="
+          scroll-mt-0
           bg-[#f7f5f2]
           px-6
           py-24
@@ -264,14 +271,12 @@ export default function Home() {
           md:py-32
         "
       >
-
         <div
           className="
             mx-auto
             max-w-7xl
           "
         >
-
           <div
             className="
               grid
@@ -280,11 +285,13 @@ export default function Home() {
               md:items-end
             "
           >
-
             {/* LEFT */}
 
-            <div className="md:col-span-7">
-
+            <div
+              className="
+                md:col-span-7
+              "
+            >
               <p
                 className="
                   mb-5
@@ -297,7 +304,6 @@ export default function Home() {
               >
                 Personalized beauty
               </p>
-
 
               <h2
                 className="
@@ -319,9 +325,7 @@ export default function Home() {
 
                 Your match.
               </h2>
-
             </div>
-
 
             {/* RIGHT */}
 
@@ -331,7 +335,6 @@ export default function Home() {
                 md:col-start-9
               "
             >
-
               <p
                 className="
                   text-base
@@ -339,18 +342,16 @@ export default function Home() {
                   text-[#5f5954]
                 "
               >
-                EUNOIA combines facial analysis, skin profiling
-                and product intelligence to help you find makeup
-                that works for you — without endless shade testing.
+                EUNOIA combines facial analysis, skin
+                profiling and product intelligence to help
+                you find makeup that works for you —
+                without endless shade testing.
               </p>
-
             </div>
-
           </div>
 
-
           {/* =================================================
-              THREE STEP SYSTEM
+              THREE STEPS
           ================================================= */}
 
           <div
@@ -362,7 +363,6 @@ export default function Home() {
               md:grid-cols-3
             "
           >
-
             {/* STEP 01 */}
 
             <div
@@ -375,7 +375,6 @@ export default function Home() {
                 md:pr-10
               "
             >
-
               <div
                 className="
                   flex
@@ -383,7 +382,6 @@ export default function Home() {
                   justify-between
                 "
               >
-
                 <Camera
                   size={25}
                   strokeWidth={1.3}
@@ -397,9 +395,7 @@ export default function Home() {
                 >
                   01
                 </span>
-
               </div>
-
 
               <h3
                 className="
@@ -412,7 +408,6 @@ export default function Home() {
                 Scan
               </h3>
 
-
               <p
                 className="
                   mt-3
@@ -423,9 +418,7 @@ export default function Home() {
               >
                 Take a quick selfie in good lighting.
               </p>
-
             </div>
-
 
             {/* STEP 02 */}
 
@@ -439,7 +432,6 @@ export default function Home() {
                 md:px-10
               "
             >
-
               <div
                 className="
                   flex
@@ -447,7 +439,6 @@ export default function Home() {
                   justify-between
                 "
               >
-
                 <Sparkles
                   size={25}
                   strokeWidth={1.3}
@@ -461,9 +452,7 @@ export default function Home() {
                 >
                   02
                 </span>
-
               </div>
-
 
               <h3
                 className="
@@ -476,7 +465,6 @@ export default function Home() {
                 Discover
               </h3>
 
-
               <p
                 className="
                   mt-3
@@ -485,11 +473,10 @@ export default function Home() {
                   text-[#6c6660]
                 "
               >
-                Understand your tone, undertone and best shades.
+                Understand your tone, undertone and best
+                shades.
               </p>
-
             </div>
-
 
             {/* STEP 03 */}
 
@@ -499,7 +486,6 @@ export default function Home() {
                 md:pl-10
               "
             >
-
               <div
                 className="
                   flex
@@ -507,7 +493,6 @@ export default function Home() {
                   justify-between
                 "
               >
-
                 <ShoppingBag
                   size={25}
                   strokeWidth={1.3}
@@ -521,9 +506,7 @@ export default function Home() {
                 >
                   03
                 </span>
-
               </div>
-
 
               <h3
                 className="
@@ -536,7 +519,6 @@ export default function Home() {
                 Shop
               </h3>
 
-
               <p
                 className="
                   mt-3
@@ -547,18 +529,13 @@ export default function Home() {
               >
                 Build your personalized makeup kit.
               </p>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-
       {/* =====================================================
-          TRUSTED BRANDS
+          BRANDS
       ===================================================== */}
 
       <section
@@ -570,14 +547,12 @@ export default function Home() {
           md:px-12
         "
       >
-
         <div
           className="
             mx-auto
             max-w-7xl
           "
         >
-
           <div
             className="
               flex
@@ -588,7 +563,6 @@ export default function Home() {
               md:justify-between
             "
           >
-
             <p
               className="
                 text-xs
@@ -600,7 +574,6 @@ export default function Home() {
               Explore products from
             </p>
 
-
             <div
               className="
                 flex
@@ -610,7 +583,6 @@ export default function Home() {
                 gap-y-6
               "
             >
-
               {brands.map((brand) => (
                 <span
                   key={brand}
@@ -622,18 +594,13 @@ export default function Home() {
                   {brand}
                 </span>
               ))}
-
             </div>
-
           </div>
-
         </div>
-
       </section>
 
-
       {/* =====================================================
-          SHADE MATCH
+          SHADE MATCH SECTION
       ===================================================== */}
 
       <section
@@ -645,14 +612,12 @@ export default function Home() {
           md:py-32
         "
       >
-
         <div
           className="
             mx-auto
             max-w-7xl
           "
         >
-
           <div
             className="
               grid
@@ -661,9 +626,13 @@ export default function Home() {
               md:items-end
             "
           >
+            {/* LEFT */}
 
-            <div className="md:col-span-7">
-
+            <div
+              className="
+                md:col-span-7
+              "
+            >
               <p
                 className="
                   mb-5
@@ -676,7 +645,6 @@ export default function Home() {
               >
                 Cross-brand intelligence
               </p>
-
 
               <h2
                 className="
@@ -694,9 +662,9 @@ export default function Home() {
 
                 Find it elsewhere.
               </h2>
-
             </div>
 
+            {/* RIGHT */}
 
             <div
               className="
@@ -704,7 +672,6 @@ export default function Home() {
                 md:col-start-9
               "
             >
-
               <p
                 className="
                   text-base
@@ -714,12 +681,15 @@ export default function Home() {
               >
                 Already know a shade that works for you?
                 EUNOIA can help you discover comparable
-                foundation and concealer shades across brands.
+                foundation and concealer shades across
+                brands.
               </p>
 
-
               <button
-                onClick={() => navigate("/shade-match")}
+                type="button"
+                onClick={() =>
+                  navigate("/shade-match")
+                }
                 className="
                   mt-7
                   flex
@@ -733,6 +703,7 @@ export default function Home() {
                   uppercase
                   tracking-[0.12em]
                   transition
+                  duration-300
                   hover:opacity-60
                 "
               >
@@ -740,18 +711,13 @@ export default function Home() {
 
                 <ArrowRight
                   size={16}
+                  strokeWidth={1.8}
                 />
-
               </button>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
-
 
       {/* =====================================================
           FINAL CTA
@@ -766,7 +732,6 @@ export default function Home() {
           md:py-32
         "
       >
-
         <div
           className="
             mx-auto
@@ -774,7 +739,6 @@ export default function Home() {
             text-center
           "
         >
-
           <p
             className="
               text-xs
@@ -786,7 +750,6 @@ export default function Home() {
           >
             Find your match
           </p>
-
 
           <h2
             className="
@@ -808,9 +771,11 @@ export default function Home() {
             Start matching.
           </h2>
 
-
           <button
-            onClick={() => navigate("/scan")}
+            type="button"
+            onClick={() =>
+              navigate("/scan")
+            }
             className="
               mx-auto
               mt-9
@@ -827,6 +792,7 @@ export default function Home() {
               tracking-[0.08em]
               text-white
               transition
+              duration-300
               hover:bg-[#292929]
             "
           >
@@ -834,76 +800,11 @@ export default function Home() {
 
             <ArrowRight
               size={18}
+              strokeWidth={1.8}
             />
-
           </button>
-
         </div>
-
       </section>
-
-
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
-
-      <footer
-        className="
-          bg-black
-          px-6
-          py-8
-          text-white
-          md:px-12
-        "
-      >
-
-        <div
-          className="
-            mx-auto
-            flex
-            max-w-7xl
-            flex-col
-            gap-5
-            md:flex-row
-            md:items-center
-            md:justify-between
-          "
-        >
-
-          <div
-            className="
-              text-xl
-              font-light
-              tracking-[0.35em]
-            "
-          >
-            EUNOIA
-          </div>
-
-
-          <p
-            className="
-              text-xs
-              text-white/50
-            "
-          >
-            AI-powered personalized beauty
-          </p>
-
-
-          <p
-            className="
-              text-xs
-              text-white/40
-            "
-          >
-            © 2026 Eunoia
-          </p>
-
-        </div>
-
-      </footer>
-
     </div>
   );
 }

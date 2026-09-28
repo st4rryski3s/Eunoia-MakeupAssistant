@@ -11,7 +11,9 @@ import {
 
 import { getRecommendations } from "../recommend";
 import productImages from "../productImages";
+
 import { supabase } from "../lib/supabase";
+
 import {
   getPreferences,
   getLatestSkinAnalysis,
@@ -20,9 +22,15 @@ import {
   deleteSavedProduct,
 } from "../services/supabaseData";
 
-import EunoiaNav from "../components/EunoiaNav";
+
+/*
+|--------------------------------------------------------------------------
+| FALLBACK CATEGORY IMAGES
+|--------------------------------------------------------------------------
+*/
 
 const categoryImages = {
+
   foundation:
     "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=80",
 
@@ -37,186 +45,345 @@ const categoryImages = {
 
   eyeshadow:
     "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80",
+
 };
 
+
+/*
+|--------------------------------------------------------------------------
+| CATEGORY FILTERS
+|--------------------------------------------------------------------------
+*/
+
 const categories = [
+
   {
     id: "all",
     label: "All",
   },
+
   {
     id: "foundation",
     label: "Foundation",
   },
+
   {
     id: "concealer",
     label: "Concealer",
   },
+
   {
     id: "blush",
     label: "Blush",
   },
+
   {
     id: "lipstick",
     label: "Lip",
   },
+
   {
     id: "eyeshadow",
     label: "Eyeshadow",
   },
+
 ];
 
+
 /*
- * The matcher returns a score out of 100.
- */
+|--------------------------------------------------------------------------
+| DISPLAY SCORE
+|--------------------------------------------------------------------------
+*/
+
 function getDisplayScore(product) {
+
   return Math.min(
     100,
     Math.max(
       0,
-      Math.round(product.matchScore ?? 0)
+      Math.round(
+        product.matchScore ?? 0
+      )
     )
   );
+
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| LOCAL KIT HELPER
+|--------------------------------------------------------------------------
+|
+| This is only used as a temporary browser-side
+| fallback. Supabase remains the source of truth.
+|
+*/
+
 function loadKit() {
+
   try {
+
     const saved =
-      localStorage.getItem("aura-kit");
+      localStorage.getItem(
+        "aura-kit"
+      );
+
 
     if (!saved) {
+
       return [];
+
     }
 
-    const parsed = JSON.parse(saved);
+
+    const parsed =
+      JSON.parse(saved);
+
 
     return Array.isArray(parsed)
       ? parsed
       : [];
+
   } catch {
+
     return [];
+
   }
+
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| RESULTS PAGE
+|--------------------------------------------------------------------------
+*/
+
 export default function Results() {
-  const navigate = useNavigate();
 
-  const [activeCategory, setActiveCategory] =
-    useState("all");
+  const navigate =
+    useNavigate();
 
-  const [kit, setKit] = useState([]);
 
   /*
-   * ---------------------------------------------------------
-   * REAL USER DATA
-   * ---------------------------------------------------------
-   *
-   * Results loads the actual skin analysis and preferences
-   * saved during the Scan + Preferences steps.
+   * ------------------------------------------------------------
+   * CATEGORY
+   * ------------------------------------------------------------
    */
 
-  const [savedPreferences, setSavedPreferences] =
-    useState(null);
+  const [
+    activeCategory,
+    setActiveCategory,
+  ] = useState("all");
 
-  const [skinProfile, setSkinProfile] =
-    useState(null);
 
-  const [dataLoading, setDataLoading] =
-    useState(true);
+  /*
+   * ------------------------------------------------------------
+   * KIT
+   * ------------------------------------------------------------
+   */
 
-  const [dataError, setDataError] =
-    useState("");
+  const [
+    kit,
+    setKit,
+  ] = useState(loadKit);
+
+
+  /*
+   * ------------------------------------------------------------
+   * USER DATA
+   * ------------------------------------------------------------
+   */
+
+  const [
+    savedPreferences,
+    setSavedPreferences,
+  ] = useState(null);
+
+
+  const [
+    skinProfile,
+    setSkinProfile,
+  ] = useState(null);
+
+
+  const [
+    dataLoading,
+    setDataLoading,
+  ] = useState(true);
+
+
+  const [
+    dataError,
+    setDataError,
+  ] = useState("");
+
+
+  /*
+   * ============================================================
+   * LOAD USER DATA
+   * ============================================================
+   */
 
   useEffect(() => {
+
     let cancelled = false;
 
+
     async function loadUserData() {
+
       setDataLoading(true);
       setDataError("");
 
+
       try {
+
+        /*
+         * ------------------------------------------------------
+         * GET CURRENT USER
+         * ------------------------------------------------------
+         */
+
         const {
-          data: { user },
+          data: {
+            user,
+          },
           error: userError,
-        } = await supabase.auth.getUser();
+        } =
+          await supabase.auth.getUser();
+
 
         if (userError) {
+
           throw userError;
+
         }
 
+
         if (!user) {
+
           throw new Error(
             "No logged-in user found."
           );
+
         }
 
-        const [preferences, skinAnalysis, savedProducts] =
-          await Promise.all([
-            getPreferences(user.id),
-            getLatestSkinAnalysis(user.id),
-            getSavedProducts(user.id),
-          ]);
-
-        // Supabase is the source of truth for the kit.
-        // Convert saved_products rows back into the product shape
-        // used by the Results page.
-        const savedKit = (savedProducts || []).map((item) => ({
-          id: item.product_id,
-          name: item.product_name,
-          brand: item.brand,
-          category: item.category,
-          shade: item.shade,
-          price: item.price,
-          imageUrl: item.image_url || "",
-          image: item.image_url || "",
-        }));
-
-        if (cancelled) {
-          return;
-        }
 
         /*
-         * -----------------------------------------------------
-         * NORMALIZED PREFERENCES
-         * -----------------------------------------------------
+         * ------------------------------------------------------
+         * LOAD:
          *
-         * Supabase now stores the exact budget range selected
-         * using the dual-thumb budget slider.
-         *
-         * Example:
-         *
-         * budget_min = 500
-         * budget_max = 2500
-         *
-         * No old budget labels or budget maps are needed.
+         * 1. Preferences
+         * 2. Skin analysis
+         * 3. Saved kit
+         * ------------------------------------------------------
          */
 
-        const budgetMin = Number(
-          preferences?.budget_min ?? 0
-        );
+        const [
+          preferences,
+          skinAnalysis,
+          savedProducts,
+        ] = await Promise.all([
 
-        const budgetMax = Number(
-          preferences?.budget_max ?? 5000
-        );
+          getPreferences(
+            user.id
+          ),
+
+          getLatestSkinAnalysis(
+            user.id
+          ),
+
+          getSavedProducts(
+            user.id
+          ),
+
+        ]);
+
+
+        /*
+         * ------------------------------------------------------
+         * CONVERT SUPABASE KIT ROWS
+         * BACK INTO PRODUCT OBJECTS
+         * ------------------------------------------------------
+         */
+
+        const savedKit =
+          (savedProducts || []).map(
+            (item) => ({
+
+              id:
+                item.product_id,
+
+              name:
+                item.product_name,
+
+              brand:
+                item.brand,
+
+              category:
+                item.category,
+
+              shade:
+                item.shade,
+
+              price:
+                item.price,
+
+              imageUrl:
+                item.image_url ||
+                "",
+
+              image:
+                item.image_url ||
+                "",
+
+            })
+          );
+
+
+        if (cancelled) {
+
+          return;
+
+        }
+
+
+        /*
+         * ------------------------------------------------------
+         * NORMALIZE PREFERENCES
+         * ------------------------------------------------------
+         */
+
+        const budgetMin =
+          Number(
+            preferences?.budget_min ??
+            0
+          );
+
+
+        const budgetMax =
+          Number(
+            preferences?.budget_max ??
+            5000
+          );
+
 
         const normalizedPreferences = {
+
           skinType:
-            preferences?.skin_type || "",
+            preferences?.skin_type ||
+            "",
 
           look:
-            preferences?.preferred_look || "",
+            preferences?.preferred_look ||
+            "",
 
-          /*
-           * Exact selected budget range
-           */
           budgetMin,
 
           budgetMax,
 
-          /*
-           * Human-readable version for displaying
-           * the selected range if needed.
-           */
           budgetLabel:
             `₹${budgetMin.toLocaleString(
               "en-IN"
@@ -225,20 +392,20 @@ export default function Results() {
             )}`,
 
           brands:
-            preferences?.preferred_brands || [],
+            preferences?.preferred_brands ||
+            [],
+
         };
 
+
         /*
-         * -----------------------------------------------------
-         * PERSON 2 -> PERSON 3 DEPTH MAPPING
-         * -----------------------------------------------------
-         *
-         * Person 2 stores toneLevel as 1–10.
-         *
-         * Person 3's matcher expects a depth string.
+         * ------------------------------------------------------
+         * PERSON 2 → PERSON 3 DEPTH MAPPING
+         * ------------------------------------------------------
          */
 
         const depthMap = {
+
           1: "fair",
           2: "fair",
           3: "light",
@@ -249,21 +416,27 @@ export default function Results() {
           8: "deep-medium",
           9: "dark",
           10: "deep",
+
         };
+
 
         const toneLevel =
           skinAnalysis?.analysis_data
             ?.toneLevel ??
           skinAnalysis?.skin_depth;
 
+
         const numericToneLevel =
           Number(toneLevel);
 
+
         const normalizedSkinProfile = {
+
           depth:
             depthMap[
               numericToneLevel
-            ] || "medium",
+            ] ||
+            "medium",
 
           undertone: (
             skinAnalysis?.undertone ||
@@ -274,357 +447,613 @@ export default function Results() {
 
           tone:
             skinAnalysis?.skin_tone ||
-            skinAnalysis?.analysis_data?.tone ||
+            skinAnalysis?.analysis_data
+              ?.tone ||
             "",
+
         };
+
+
+        /*
+         * ------------------------------------------------------
+         * SAVE STATE
+         * ------------------------------------------------------
+         */
 
         setSavedPreferences(
           normalizedPreferences
         );
 
+
         setSkinProfile(
           normalizedSkinProfile
         );
 
-        // Load the kit from Supabase, not stale localStorage.
-        setKit(savedKit);
+
+        setKit(
+          savedKit
+        );
+
+
+        /*
+         * Keep local storage in sync.
+         */
+
         localStorage.setItem(
           "aura-kit",
-          JSON.stringify(savedKit)
+          JSON.stringify(
+            savedKit
+          )
         );
+
       } catch (error) {
+
         console.error(
           "Failed to load Results data:",
           error
         );
 
+
         if (!cancelled) {
+
           setDataError(
             "Could not load your personalised analysis. Please try scanning your face again."
           );
+
         }
+
       } finally {
+
         if (!cancelled) {
-          setDataLoading(false);
+
+          setDataLoading(
+            false
+          );
+
         }
+
       }
+
     }
+
 
     loadUserData();
 
+
     return () => {
+
       cancelled = true;
+
     };
+
   }, []);
 
-  /*
-   * ---------------------------------------------------------
-   * USER PROFILE FOR MATCHER
-   * ---------------------------------------------------------
-   *
-   * All relevant user information is passed into
-   * the recommendation engine.
-   *
-   * 1. depth
-   * 2. undertone
-   * 3. skin type
-   * 4. preferred look
-   * 5. preferred brands
-   * 6. budgetMin
-   * 7. budgetMax
-   */
-
-  const baseUser = useMemo(() => {
-    if (
-      !skinProfile ||
-      !savedPreferences
-    ) {
-      return null;
-    }
-
-    return {
-      /*
-       * Skin analysis
-       */
-
-      depth:
-        skinProfile.depth,
-
-      undertone:
-        skinProfile.undertone,
-
-      /*
-       * User preferences
-       */
-
-      skinType:
-        savedPreferences.skinType,
-
-      look:
-        savedPreferences.look,
-
-      brands:
-        savedPreferences.brands,
-
-      /*
-       * Exact budget range
-       */
-
-      budgetMin:
-        savedPreferences.budgetMin,
-
-      budgetMax:
-        savedPreferences.budgetMax,
-    };
-  }, [
-    skinProfile,
-    savedPreferences,
-  ]);
 
   /*
-   * ---------------------------------------------------------
-   * RECOMMENDATIONS
-   * ---------------------------------------------------------
+   * ============================================================
+   * BUILD USER PROFILE FOR RECOMMENDATION ENGINE
+   * ============================================================
    */
 
-  const recommendations = useMemo(() => {
-    if (!baseUser) {
-      return [];
-    }
+  const baseUser =
+    useMemo(() => {
 
-    try {
-      if (activeCategory === "all") {
-        const categoriesToFetch = [
-          "foundation",
-          "concealer",
-          "blush",
-          "lipstick",
-          "eyeshadow",
-        ];
+      if (
+        !skinProfile ||
+        !savedPreferences
+      ) {
 
-        const allProducts =
-          categoriesToFetch.flatMap(
-            (category) => {
-              return getRecommendations({
-                ...baseUser,
-                category,
-              });
+        return null;
+
+      }
+
+
+      return {
+
+        /*
+         * Skin analysis
+         */
+
+        depth:
+          skinProfile.depth,
+
+        undertone:
+          skinProfile.undertone,
+
+
+        /*
+         * Preferences
+         */
+
+        skinType:
+          savedPreferences.skinType,
+
+        look:
+          savedPreferences.look,
+
+        brands:
+          savedPreferences.brands,
+
+
+        /*
+         * Budget
+         */
+
+        budgetMin:
+          savedPreferences.budgetMin,
+
+        budgetMax:
+          savedPreferences.budgetMax,
+
+      };
+
+    }, [
+      skinProfile,
+      savedPreferences,
+    ]);
+
+
+  /*
+   * ============================================================
+   * GET RECOMMENDATIONS
+   * ============================================================
+   */
+
+  const recommendations =
+    useMemo(() => {
+
+      if (!baseUser) {
+
+        return [];
+
+      }
+
+
+      try {
+
+        /*
+         * ------------------------------------------------------
+         * ALL CATEGORIES
+         * ------------------------------------------------------
+         */
+
+        if (
+          activeCategory ===
+          "all"
+        ) {
+
+          const categoriesToFetch = [
+
+            "foundation",
+
+            "concealer",
+
+            "blush",
+
+            "lipstick",
+
+            "eyeshadow",
+
+          ];
+
+
+          const allProducts =
+            categoriesToFetch.flatMap(
+              (category) => {
+
+                return getRecommendations({
+
+                  ...baseUser,
+
+                  category,
+
+                });
+
+              }
+            );
+
+
+          /*
+           * Remove duplicate products.
+           */
+
+          return Array.from(
+
+            new Map(
+
+              allProducts.map(
+                (product) => [
+
+                  product.id,
+
+                  product,
+
+                ]
+              )
+
+            ).values()
+
+          );
+
+        }
+
+
+        /*
+         * ------------------------------------------------------
+         * ONE CATEGORY
+         * ------------------------------------------------------
+         */
+
+        return getRecommendations({
+
+          ...baseUser,
+
+          category:
+            activeCategory,
+
+        });
+
+      } catch (error) {
+
+        console.error(
+          "Recommendation error:",
+          error
+        );
+
+
+        return [];
+
+      }
+
+    }, [
+      activeCategory,
+      baseUser,
+    ]);
+
+
+  /*
+   * ============================================================
+   * ADD / REMOVE FROM KIT
+   * ============================================================
+   */
+
+  const toggleKit =
+    async (product) => {
+
+      try {
+
+        /*
+         * Get logged-in user.
+         */
+
+        const {
+          data: {
+            user,
+          },
+          error: userError,
+        } =
+          await supabase.auth.getUser();
+
+
+        if (userError) {
+
+          throw userError;
+
+        }
+
+
+        if (!user) {
+
+          console.error(
+            "No logged-in user found."
+          );
+
+          navigate("/login");
+
+          return;
+
+        }
+
+
+        /*
+         * Check whether product
+         * is already in kit.
+         */
+
+        const alreadyAdded =
+          kit.some(
+            (item) =>
+              item.id ===
+              product.id
+          );
+
+
+        /*
+         * ======================================================
+         * REMOVE
+         * ======================================================
+         */
+
+        if (alreadyAdded) {
+
+          await deleteSavedProduct(
+            user.id,
+            product.id
+          );
+
+
+          setKit(
+            (currentKit) => {
+
+              const updatedKit =
+                currentKit.filter(
+                  (item) =>
+                    item.id !==
+                    product.id
+                );
+
+
+              localStorage.setItem(
+                "aura-kit",
+                JSON.stringify(
+                  updatedKit
+                )
+              );
+
+
+              return updatedKit;
+
             }
           );
 
+
+          window.dispatchEvent(
+
+            new CustomEvent(
+              "eunoia-kit-updated",
+              {
+                detail: {
+                  action:
+                    "remove",
+
+                  product,
+                },
+              }
+            )
+
+          );
+
+
+          return;
+
+        }
+
+
         /*
-         * Remove duplicates just in case
-         * the same product appears more than once.
+         * ======================================================
+         * ADD
+         * ======================================================
          */
 
-        return Array.from(
-          new Map(
-            allProducts.map(
-              (product) => [
-                product.id,
-                product,
-              ]
-            )
-          ).values()
-        );
-      }
-
-      return getRecommendations({
-        ...baseUser,
-        category:
-          activeCategory,
-      });
-    } catch (error) {
-      console.error(
-        "Recommendation error:",
-        error
-      );
-
-      return [];
-    }
-  }, [
-    activeCategory,
-    baseUser,
-  ]);
-
-  /*
-   * ---------------------------------------------------------
-   * ADD / REMOVE FROM KIT
-   * ---------------------------------------------------------
-   */
-
-  const toggleKit = async (product) => {
-    try {
-      // Get the currently logged-in user
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
-      }
-
-      if (!user) {
-        console.error("No logged-in user found.");
-        return;
-      }
-
-      // Check whether this product is already in the kit
-      const alreadyAdded = kit.some(
-        (item) => item.id === product.id
-      );
-
-      // ------------------------------------
-      // REMOVE FROM KIT
-      // ------------------------------------
-
-      if (alreadyAdded) {
-        await deleteSavedProduct(
+        await saveProduct(
           user.id,
-          product.id
+          {
+
+            id:
+              product.id,
+
+            name:
+              product.name,
+
+            brand:
+              product.brand,
+
+            category:
+              product.category,
+
+            shade:
+              product.shade,
+
+            price:
+              product.price,
+
+            imageUrl:
+              product.imageUrl ||
+              product.image ||
+              "",
+
+          }
         );
 
-        setKit((currentKit) => {
-          const updatedKit = currentKit.filter(
-            (item) => item.id !== product.id
-          );
 
-          // Keep localStorage temporarily in sync
-          localStorage.setItem(
-            "aura-kit",
-            JSON.stringify(updatedKit)
-          );
+        setKit(
+          (currentKit) => {
 
-          return updatedKit;
-        });
+            const updatedKit = [
+
+              ...currentKit,
+
+              product,
+
+            ];
+
+
+            localStorage.setItem(
+              "aura-kit",
+              JSON.stringify(
+                updatedKit
+              )
+            );
+
+
+            return updatedKit;
+
+          }
+        );
+
 
         window.dispatchEvent(
-          new CustomEvent("eunoia-kit-updated", {
-            detail: {
-              action: "remove",
-              product,
-            },
-          })
+
+          new CustomEvent(
+            "eunoia-kit-updated",
+            {
+              detail: {
+                action:
+                  "add",
+
+                product,
+              },
+            }
+          )
+
         );
 
-        return;
+
+      } catch (error) {
+
+        console.error(
+          "Kit update failed:",
+          error
+        );
+
       }
 
-      // ------------------------------------
-      // ADD TO KIT
-      // ------------------------------------
+    };
 
-      await saveProduct(user.id, {
-        id: product.id,
-        name: product.name,
-        brand: product.brand,
-        category: product.category,
-        shade: product.shade,
-        price: product.price,
-
-        // Use whichever image field exists
-        imageUrl:
-          product.imageUrl ||
-          product.image ||
-          "",
-      });
-
-      setKit((currentKit) => {
-        const updatedKit = [
-          ...currentKit,
-          product,
-        ];
-
-        // Keep localStorage temporarily in sync
-        localStorage.setItem(
-          "aura-kit",
-          JSON.stringify(updatedKit)
-        );
-
-        return updatedKit;
-      });
-
-      window.dispatchEvent(
-        new CustomEvent("eunoia-kit-updated", {
-          detail: {
-            action: "add",
-            product,
-          },
-        })
-      );
-    } catch (error) {
-      console.error(
-        "Kit update failed:",
-        error
-      );
-    }
-  };
-
-  const isInKit = (productId) => {
-    return kit.some(
-      (item) =>
-        item.id === productId
-    );
-  };
 
   /*
-   * ---------------------------------------------------------
-   * PRODUCT IMAGE
-   * ---------------------------------------------------------
+   * ============================================================
+   * CHECK IF PRODUCT IS IN KIT
+   * ============================================================
    */
 
-  const getProductImage = (
-    product
-  ) => {
-    return (
-      productImages[product.id] ||
-      product.image ||
-      categoryImages[
-        product.category
-      ] ||
-      categoryImages.foundation
-    );
-  };
+  const isInKit =
+    (productId) => {
+
+      return kit.some(
+        (item) =>
+          item.id ===
+          productId
+      );
+
+    };
+
 
   /*
-   * ---------------------------------------------------------
+   * ============================================================
+   * PRODUCT IMAGE
+   * ============================================================
+   */
+
+  const getProductImage =
+    (product) => {
+
+      return (
+
+        productImages[
+          product.id
+        ] ||
+
+        product.image ||
+
+        product.imageUrl ||
+
+        categoryImages[
+          product.category
+        ] ||
+
+        categoryImages.foundation
+
+      );
+
+    };
+
+
+  /*
+   * ============================================================
    * LOADING STATE
-   * ---------------------------------------------------------
+   * ============================================================
    */
 
   if (dataLoading) {
+
     return (
-      <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
-        <EunoiaNav
-          showFloatingBasket={true}
-        />
 
-        <main className="flex min-h-[70vh] items-center justify-center px-6">
-          <div className="text-center">
+      <div
+        className="
+          min-h-screen
+          bg-[#faf8f6]
+          text-[#2d2522]
+        "
+      >
 
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
-              Eunoia
+        <main
+          className="
+            flex
+            min-h-screen
+            items-center
+            justify-center
+            px-6
+          "
+        >
+
+          <div
+            className="
+              text-center
+            "
+          >
+
+            <p
+              className="
+                text-2xl
+                font-light
+                tracking-[0.34em]
+              "
+            >
+              EUNOIA
             </p>
 
-            <h1 className="mt-4 text-3xl font-bold">
-              Preparing your matches...
-            </h1>
 
-            <p className="mt-3 text-sm text-[#2d2522]/60">
-              Loading your skin analysis and preferences.
+            <p
+              className="
+                mt-5
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[0.25em]
+                text-[#8b6f61]
+              "
+            >
+              Preparing your matches...
+            </p>
+
+
+            <p
+              className="
+                mt-3
+                text-sm
+                text-[#2d2522]/60
+              "
+            >
+              Loading your skin analysis
+              and preferences.
             </p>
 
           </div>
+
         </main>
+
       </div>
+
     );
+
   }
 
+
   /*
-   * ---------------------------------------------------------
+   * ============================================================
    * ERROR STATE
-   * ---------------------------------------------------------
+   * ============================================================
    */
 
   if (
@@ -632,52 +1061,107 @@ export default function Results() {
     !skinProfile ||
     !savedPreferences
   ) {
+
     return (
-      <div className="min-h-screen bg-[#faf8f6] text-[#2d2522]">
 
-        <EunoiaNav
-          showFloatingBasket={true}
-        />
+      <div
+        className="
+          min-h-screen
+          bg-[#faf8f6]
+          text-[#2d2522]
+        "
+      >
 
-        <main className="flex min-h-[70vh] items-center justify-center px-6">
-          <div className="max-w-md text-center">
+        <main
+          className="
+            flex
+            min-h-screen
+            items-center
+            justify-center
+            px-6
+          "
+        >
 
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#8b6f61]">
-              Eunoia
+          <div
+            className="
+              max-w-md
+              text-center
+            "
+          >
+
+            <p
+              className="
+                text-2xl
+                font-light
+                tracking-[0.34em]
+              "
+            >
+              EUNOIA
             </p>
 
-            <h1 className="mt-4 text-3xl font-bold">
+
+            <h1
+              className="
+                mt-6
+                text-3xl
+                font-bold
+              "
+            >
               We couldn't load your matches
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-[#2d2522]/60">
+
+            <p
+              className="
+                mt-4
+                text-sm
+                leading-6
+                text-[#2d2522]/60
+              "
+            >
               {dataError ||
                 "Please complete your skin scan and preferences first."}
             </p>
 
+
             <button
+              type="button"
               onClick={() =>
                 navigate("/scan")
               }
-              className="eunoia-button mt-7 bg-[#111] px-6 py-3 text-sm font-semibold text-white"
+              className="
+                eunoia-button
+                mt-7
+                bg-[#111]
+                px-6
+                py-3
+                text-sm
+                font-semibold
+                text-white
+              "
             >
               Back to scan
             </button>
 
           </div>
+
         </main>
 
       </div>
+
     );
+
   }
 
+
   /*
-   * ---------------------------------------------------------
+   * ============================================================
    * MAIN RESULTS PAGE
-   * ---------------------------------------------------------
+   * ============================================================
    */
 
   return (
+
     <div
       className="
         min-h-screen
@@ -686,19 +1170,20 @@ export default function Results() {
       "
     >
 
-      {/* =====================================================
-          NAVBAR + FLOATING BASKET
-      ===================================================== */}
+      {/* ======================================================
+          IMPORTANT:
+          NO HEADER HERE.
+          
+          EunoiaLayout.jsx supplies the global header.
+      ====================================================== */}
 
-      <EunoiaNav
-        showFloatingBasket={true}
-      />
-
-      {/* =====================================================
-          PAGE INTRO
-      ===================================================== */}
 
       <main>
+
+
+        {/* ====================================================
+            PAGE INTRO
+        ==================================================== */}
 
         <section
           className="
@@ -713,6 +1198,7 @@ export default function Results() {
         >
 
           <button
+            type="button"
             onClick={() =>
               navigate("/preferences")
             }
@@ -725,13 +1211,19 @@ export default function Results() {
               uppercase
               tracking-[0.15em]
               text-[#2d2522]/60
+              transition
               hover:text-[#2d2522]
             "
           >
-            <ArrowLeft size={16} />
+
+            <ArrowLeft
+              size={16}
+            />
 
             Back to preferences
+
           </button>
+
 
           <div
             className="
@@ -757,10 +1249,15 @@ export default function Results() {
                   text-[#8b6f61]
                 "
               >
-                <Sparkles size={14} />
+
+                <Sparkles
+                  size={14}
+                />
 
                 Your personalised edit
+
               </div>
+
 
               <h1
                 className="
@@ -772,12 +1269,17 @@ export default function Results() {
                   md:text-7xl
                 "
               >
+
                 YOUR
+
                 <br />
+
                 MATCHES.
+
               </h1>
 
             </div>
+
 
             <div
               className="
@@ -794,13 +1296,16 @@ export default function Results() {
                   md:text-lg
                 "
               >
+
                 Based on your skin analysis
                 and preferences, EUNOIA has
                 selected products that match
                 your complexion, undertone,
                 skin type, preferred look,
                 preferred brands and budget.
+
               </p>
+
 
               <div
                 className="
@@ -822,8 +1327,13 @@ export default function Results() {
                     tracking-[0.12em]
                   "
                 >
-                  {skinProfile.depth} depth
+
+                  {skinProfile.depth}
+                  {" "}
+                  depth
+
                 </span>
+
 
                 <span
                   className="
@@ -836,10 +1346,16 @@ export default function Results() {
                     tracking-[0.12em]
                   "
                 >
-                  {skinProfile.undertone} undertone
+
+                  {skinProfile.undertone}
+                  {" "}
+                  undertone
+
                 </span>
 
+
                 {savedPreferences.skinType && (
+
                   <span
                     className="
                       border
@@ -851,11 +1367,16 @@ export default function Results() {
                       tracking-[0.12em]
                     "
                   >
+
                     {savedPreferences.skinType}
+
                   </span>
+
                 )}
 
+
                 {savedPreferences.look && (
+
                   <span
                     className="
                       border
@@ -867,8 +1388,11 @@ export default function Results() {
                       tracking-[0.12em]
                     "
                   >
+
                     {savedPreferences.look}
+
                   </span>
+
                 )}
 
               </div>
@@ -879,9 +1403,10 @@ export default function Results() {
 
         </section>
 
-        {/* ===================================================
+
+        {/* ====================================================
             CATEGORY NAV
-        =================================================== */}
+        ==================================================== */}
 
         <section
           className="
@@ -903,13 +1428,19 @@ export default function Results() {
 
             {categories.map(
               (category) => {
+
                 const active =
                   activeCategory ===
                   category.id;
 
+
                 return (
+
                   <button
-                    key={category.id}
+                    type="button"
+                    key={
+                      category.id
+                    }
                     onClick={() =>
                       setActiveCategory(
                         category.id
@@ -932,9 +1463,13 @@ export default function Results() {
                       }
                     `}
                   >
+
                     {category.label}
+
                   </button>
+
                 );
+
               }
             )}
 
@@ -942,9 +1477,10 @@ export default function Results() {
 
         </section>
 
-        {/* ===================================================
+
+        {/* ====================================================
             RESULTS
-        =================================================== */}
+        ==================================================== */}
 
         <section
           className="
@@ -979,8 +1515,13 @@ export default function Results() {
                   text-[#8b6f61]
                 "
               >
-                {recommendations.length} products
+
+                {recommendations.length}
+                {" "}
+                products
+
               </p>
+
 
               <h2
                 className="
@@ -990,12 +1531,16 @@ export default function Results() {
                   md:text-4xl
                 "
               >
+
                 Recommended for you
+
               </h2>
 
             </div>
 
+
             <button
+              type="button"
               onClick={() =>
                 navigate("/kit")
               }
@@ -1011,19 +1556,25 @@ export default function Results() {
                 sm:flex
               "
             >
+
               View my kit
 
-              <ChevronRight size={15} />
+              <ChevronRight
+                size={15}
+              />
+
             </button>
 
           </div>
 
-          {/* =================================================
+
+          {/* ==================================================
               NO RESULTS
-          ================================================= */}
+          ================================================== */}
 
           {recommendations.length ===
           0 ? (
+
             <div
               className="
                 border
@@ -1041,8 +1592,11 @@ export default function Results() {
                   font-bold
                 "
               >
+
                 No matches found
+
               </h3>
+
 
               <p
                 className="
@@ -1053,14 +1607,20 @@ export default function Results() {
                   text-[#2d2522]/60
                 "
               >
+
                 Try increasing your budget
                 or changing your preferences
                 to see more recommendations.
+
               </p>
 
+
               <button
+                type="button"
                 onClick={() =>
-                  navigate("/preferences")
+                  navigate(
+                    "/preferences"
+                  )
                 }
                 className="
                   eunoia-button
@@ -1073,11 +1633,15 @@ export default function Results() {
                   text-white
                 "
               >
+
                 Edit preferences
+
               </button>
 
             </div>
+
           ) : (
+
             <div
               className="
                 grid
@@ -1091,29 +1655,31 @@ export default function Results() {
 
               {recommendations.map(
                 (product) => {
+
                   const added =
                     isInKit(
                       product.id
                     );
 
-                  /*
-                   * Matcher score is already
-                   * out of 100.
-                   */
 
                   const score =
                     getDisplayScore(
                       product
                     );
 
+
                   const image =
                     getProductImage(
                       product
                     );
 
+
                   return (
+
                     <article
-                      key={product.id}
+                      key={
+                        product.id
+                      }
                       className="
                         eunoia-product-card
                         group
@@ -1134,7 +1700,9 @@ export default function Results() {
 
                         <img
                           src={image}
-                          alt={product.name}
+                          alt={
+                            product.name
+                          }
                           className="
                             h-full
                             w-full
@@ -1143,23 +1711,26 @@ export default function Results() {
                           onError={(
                             event
                           ) => {
-                            /*
-                             * Don't keep repeatedly
-                             * triggering the error.
-                             */
 
-                            event.currentTarget.onerror =
+                            event
+                              .currentTarget
+                              .onerror =
                               null;
 
-                            event.currentTarget.src =
+
+                            event
+                              .currentTarget
+                              .src =
                               categoryImages[
                                 product.category
                               ] ||
                               categoryImages.foundation;
+
                           }}
                         />
 
-                        {/* MATCH */}
+
+                        {/* MATCH SCORE */}
 
                         <div
                           className="
@@ -1187,9 +1758,12 @@ export default function Results() {
                             "
                           />
 
-                          {score}% match
+                          {score}%
+                          {" "}
+                          match
 
                         </div>
+
 
                         {/* CATEGORY */}
 
@@ -1208,14 +1782,21 @@ export default function Results() {
                             text-white
                           "
                         >
+
                           {product.category}
+
                         </div>
 
                       </div>
 
+
                       {/* PRODUCT INFORMATION */}
 
-                      <div className="pt-5">
+                      <div
+                        className="
+                          pt-5
+                        "
+                      >
 
                         <div
                           className="
@@ -1226,8 +1807,11 @@ export default function Results() {
                             text-[#2d2522]/45
                           "
                         >
+
                           {product.brand}
+
                         </div>
+
 
                         <h3
                           className="
@@ -1236,10 +1820,14 @@ export default function Results() {
                             leading-tight
                           "
                         >
+
                           {product.name}
+
                         </h3>
 
+
                         {product.shade && (
+
                           <p
                             className="
                               mt-2
@@ -1247,12 +1835,18 @@ export default function Results() {
                               text-[#2d2522]/55
                             "
                           >
-                            Shade:{" "}
+
+                            Shade:
+                            {" "}
                             {product.shade}
+
                           </p>
+
                         )}
 
+
                         {product.matchReason && (
+
                           <p
                             className="
                               mt-3
@@ -1261,9 +1855,13 @@ export default function Results() {
                               text-[#2d2522]/65
                             "
                           >
+
                             {product.matchReason}
+
                           </p>
+
                         )}
+
 
                         {/* PRICE + BUTTON */}
 
@@ -1285,15 +1883,20 @@ export default function Results() {
                               font-semibold
                             "
                           >
+
                             ₹
                             {Number(
-                              product.price || 0
+                              product.price ||
+                              0
                             ).toLocaleString(
                               "en-IN"
                             )}
+
                           </span>
 
+
                           <button
+                            type="button"
                             onClick={() =>
                               toggleKit(
                                 product
@@ -1312,6 +1915,7 @@ export default function Results() {
 
                               ${
                                 added
+
                                   ? `
                                     border-[#111]
                                     bg-[#111]
@@ -1319,6 +1923,7 @@ export default function Results() {
                                     hover:bg-white
                                     hover:text-[#111]
                                   `
+
                                   : `
                                     border-[#111]
                                     bg-transparent
@@ -1331,21 +1936,29 @@ export default function Results() {
                           >
 
                             {added ? (
+
                               <>
+
                                 <Check
                                   size={14}
                                 />
 
                                 Added
+
                               </>
+
                             ) : (
+
                               <>
+
                                 <ShoppingBag
                                   size={14}
                                 />
 
                                 Add to kit
+
                               </>
+
                             )}
 
                           </button>
@@ -1355,18 +1968,22 @@ export default function Results() {
                       </div>
 
                     </article>
+
                   );
+
                 }
               )}
 
             </div>
+
           )}
 
         </section>
 
-        {/* ===================================================
+
+        {/* ====================================================
             KIT CTA
-        =================================================== */}
+        ==================================================== */}
 
         <section
           className="
@@ -1405,8 +2022,11 @@ export default function Results() {
                   text-[#8b6f61]
                 "
               >
+
                 Your collection
+
               </p>
+
 
               <h2
                 className="
@@ -1416,8 +2036,11 @@ export default function Results() {
                   md:text-5xl
                 "
               >
+
                 BUILD YOUR EUNOIA KIT.
+
               </h2>
+
 
               <p
                 className="
@@ -1428,15 +2051,19 @@ export default function Results() {
                   text-[#2d2522]/65
                 "
               >
+
                 Save the products you love
                 and see your complete
                 personalised makeup collection
                 in one place.
+
               </p>
 
             </div>
 
+
             <button
+              type="button"
               onClick={() =>
                 navigate("/kit")
               }
@@ -1454,9 +2081,13 @@ export default function Results() {
                 text-white
               "
             >
+
               View my kit
 
-              <ChevronRight size={17} />
+              <ChevronRight
+                size={17}
+              />
+
             </button>
 
           </div>
@@ -1465,55 +2096,18 @@ export default function Results() {
 
       </main>
 
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
 
-      <footer
-        className="
-          border-t
-          border-[#2d2522]/15
-          bg-[#faf8f6]
-        "
-      >
-
-        <div
-          className="
-            mx-auto
-            flex
-            max-w-[1400px]
-            flex-col
-            gap-4
-            px-6
-            py-8
-            text-xs
-            text-[#2d2522]/50
-            md:flex-row
-            md:items-center
-            md:justify-between
-            md:px-10
-          "
-        >
-
-          <span
-            className="
-              font-black
-              tracking-[-0.05em]
-              text-[#2d2522]
-            "
-          >
-            EUNOIA
-          </span>
-
-          <span>
-            Personalised beauty, powered by
-            your own features.
-          </span>
-
-        </div>
-
-      </footer>
+      {/*
+       * IMPORTANT:
+       *
+       * NO FOOTER HERE.
+       *
+       * EunoiaLayout.jsx supplies the ONE
+       * global footer.
+       */}
 
     </div>
+
   );
+
 }
